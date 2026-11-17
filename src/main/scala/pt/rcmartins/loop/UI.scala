@@ -293,6 +293,7 @@ class UI(
         span("Notes / Info"),
         div(cls := "space-y-2 max-h-[30dvh] overflow-auto", miscView)
       ),
+      panelCard(span("Settings"), installSettingsView()),
       if (DEBUG_MODE)
         panelCard(
           span("Debug Actions"),

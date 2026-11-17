@@ -122,7 +122,12 @@ class MobileUI(
   }
 
   private def settingsView(): ReactiveHtmlElement[HTMLDivElement] = {
-    Util.debugView(gameData, saveLoad)
+    div(
+      cls := "space-y-3",
+      h3("Installation"),
+      Util.installSettingsView(),
+      Util.debugView(gameData, saveLoad)
+    )
   }
 
   private def inventoryView(): ReactiveHtmlElement[HTMLDivElement] = {
