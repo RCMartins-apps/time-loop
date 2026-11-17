@@ -169,15 +169,6 @@ class MobileUI(
           child.text <-- timeElapsedLong.map(secondsToPrettyStr)
         ),
 
-        // Global elapsed time tooltip
-        cls := "relative inline-block group",
-        div(
-          cls := "absolute left-0 top-full mt-1 px-2 py-1 z-20 " +
-            "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-            "hidden group-hover:block pointer-events-none z-10",
-          "Total Elapsed Time: ",
-          child.text <-- globalTimeElapsedLong.map(secondsToPrettyStr)
-        )
       ),
       div(
         cls := "flex justify-between px-2",
