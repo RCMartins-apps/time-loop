@@ -55,7 +55,7 @@ class MobileUI(
       div(
         cls := "flex-1 min-h-0 overflow-y-auto",
         div(
-          cls := "grid gap-1 sm:grid-cols-2 p-2",
+          cls := "action-grid",
           children <-- nextActions.split(_.id) { case (_, _, action) =>
             actionCard(action, gameData)
           }
