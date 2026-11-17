@@ -5,9 +5,14 @@ on:
   pull_request:
     branches:
       - main
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +25,125 @@ jobs:
           java-version: adopt@1.11
 
       - name: Build project
-        run: sbt fullOptJS
+        run: sbt fullOptCompileCopy
 
       - name: Run tests
         run: sbt test
+
+      - name: Prepare preview
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          mkdir -p publish-folder/public
+          cp index.html publish-folder/
+          cp -r public/* publish-folder/public/
+          touch publish-folder/.nojekyll
+          echo "$PR_HEAD_SHA" > publish-folder/preview-revision.txt
+
+      - name: Upload preview
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-preview
+          path: publish-folder
+          include-hidden-files: true
+          retention-days: 3
+
+  deploy-preview:
+    needs: test
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    concurrency:
+      group: github-pages-publish
+      cancel-in-progress: false
+    environment:
+      name: pr-${{ github.event.number }}
+      url: https://rcmartins-apps.github.io/time-loop/pr-preview/pr-${{ github.event.number }}/
+    steps:
+      - name: Checkout deployment tooling
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check PR is still open and current
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            core.setOutput('deploy', pr.state === 'open' &&
+              pr.head.sha === context.payload.pull_request.head.sha);
+
+      - name: Download preview
+        if: steps.pr.outputs.deploy == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-preview
+          path: publish-folder
+
+      - name: Deploy PR preview
+        if: steps.pr.outputs.deploy == 'true'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: publish-folder
+          target-folder: pr-preview/pr-${{ github.event.number }}
+
+      - name: Verify published preview
+        if: steps.pr.outputs.deploy == 'true'
+        env:
+          PREVIEW_URL: https://rcmartins-apps.github.io/time-loop/pr-preview/pr-${{ github.event.number }}/
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 24); do
+            revision=$(curl -fsS --max-time 15 "${PREVIEW_URL}preview-revision.txt?revision=${PR_HEAD_SHA}" || true)
+            if [ "$revision" = "$PR_HEAD_SHA" ] &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}" &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}public/js/time-loop.js"; then
+              echo "Preview is live at ${PREVIEW_URL}"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Preview did not become available on GitHub Pages in time." >&2
+          exit 1
+
+      - name: Preview link
+        if: steps.pr.outputs.deploy == 'true'
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: echo "Preview — https://rcmartins-apps.github.io/time-loop/pr-preview/pr-${PR_NUMBER}/" >> "$GITHUB_STEP_SUMMARY"
+
+  remove-preview:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: github-pages-publish
+      cancel-in-progress: false
+    steps:
+      - name: Checkout published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove closed PR preview
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          git rm -r --ignore-unmatch -- "pr-preview/pr-${PR_NUMBER}"
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Remove preview for PR #${PR_NUMBER}"
+            git push origin HEAD:gh-pages
+          fi
