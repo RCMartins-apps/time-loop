@@ -26,7 +26,7 @@ case class SkillsState(
   )
 
   def allHigherThan0: Seq[SkillState] =
-    allSkillsSeq.filter(_.permXPMicro > 0)
+    allSkillsSeq.filter(s => s.permLevel > 0 || s.permXPMicro > 0)
 
   def get(kind: ActionKind): SkillState =
     kind match {

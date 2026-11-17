@@ -28,9 +28,17 @@ class UI(
       },
       div(
         // mobile: single column; desktop: 3 columns
-        cls := "grid gap-4 md:grid-cols-[260px,1fr,300px]",
+        cls := "grid gap-4",
+        styleAttr <-- showSkillsUI.map {
+          case true  => "grid-template-columns: 260px minmax(0, 1fr) 300px"
+          case false => "grid-template-columns: minmax(0, 1fr) 300px"
+        },
         // Order for mobile stacking
-        div(cls := "order-1 md:order-1", skillsSidebar(skillsView)),
+        child.maybe <-- showSkillsUI.map(show =>
+          Option.when(show)(
+            div(cls := "order-1 md:order-1", skillsSidebar(skillsView))
+          )
+        ),
         div(
           cls := "order-2 md:order-2",
           centerColumn()
@@ -172,21 +180,12 @@ class UI(
     div(
       // two rows: auto (top) + 1fr (bottom)
       cls := "grid grid-rows-[auto,1fr] gap-4 min-h-[60dvh]",
-      // top: current action
-      child <--
-        MobileUtils.isMobileSignal.map {
-          case false =>
-            div(
-              cls := "grid grid-cols-2 gap-3",
-              currentActionView,
-              storyDiv,
-            )
-          case true =>
-            div(
-              storyDiv,
-              div(cls := "mt-4", currentActionView),
-            )
-        },
+      div(
+        cls := "grid gap-3",
+        cls("grid-cols-2") <-- showStoryUI,
+        currentActionView,
+        child.maybe <-- showStoryUI.map(show => Option.when(show)(storyDiv)),
+      ),
       // bottom: next actions list with own scroll
       div(
         cls := "rounded-2xl p-4 bg-slate-800/60 ring-1 ring-slate-700 shadow flex flex-col min-h-0 ",
@@ -276,15 +275,19 @@ class UI(
   private def rightSidebar(): HtmlElement =
     div(
       cls := "space-y-3 sticky top-4 self-start",
-      panelCard(
-        span(
-          "Inventory",
-          child.text <-- inventory.map(inv => s" (max size: ${inv.maximumSize})"),
-        ),
-        div(
-          cls := "space-y-2 pb-1 max-h-[40dvh] overflow-auto",
-          inventoryView(inventory, timeElapsedMicro)
-        )
+      child.maybe <-- showInventoryUI.map(show =>
+        Option.when(show) {
+          panelCard(
+            span(
+              "Inventory",
+              child.text <-- inventory.map(inv => s" (max size: ${inv.maximumSize})"),
+            ),
+            div(
+              cls := "space-y-2 pb-1 max-h-[40dvh] overflow-auto",
+              inventoryView(inventory, timeElapsedMicro)
+            )
+          )
+        }
       ),
       panelCard(
         span("Notes / Info"),

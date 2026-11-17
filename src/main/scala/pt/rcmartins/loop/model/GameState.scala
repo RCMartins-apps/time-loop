@@ -32,10 +32,13 @@ case class GameState(
     inProgressStoryActions: Seq[RunTimeStoryAction],
     buffs: Buffs,
     preferences: Preferences,
+    uiDiscovery: UIDiscovery = UIDiscovery(),
 ) {
 
   def currentTiredSecondMicro: Long = (currentTiredSecond * 1_000_000L).toLong
   def maxEnergyMicro: Long = maxEnergyInt * 1_000_000L
+
+  def discoveredUI: UIDiscovery = uiDiscovery.discover(this)
 
   def resetForNewLoop: GameState =
     GameState(
@@ -65,6 +68,7 @@ case class GameState(
       inProgressStoryActions = Seq(),
       buffs = buffs.resetForNewLoop,
       preferences = preferences,
+      uiDiscovery = discoveredUI,
     )
 
   def addElapedTimeMicro(actualElapsedMicro: Long): GameState =
