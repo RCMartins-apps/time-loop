@@ -24,6 +24,9 @@ jobs:
         with:
           java-version: adopt@1.11
 
+      - name: Test browser installation support
+        run: node --test tests/pwa.test.cjs
+
       - name: Build project
         run: sbt fullOptCompileCopy
 
@@ -37,6 +40,7 @@ jobs:
         run: |
           mkdir -p publish-folder/public
           cp index.html publish-folder/
+          sed "s/__PWA_VERSION__/${GITHUB_SHA}/g" service-worker.js > publish-folder/service-worker.js
           cp -r public/* publish-folder/public/
           touch publish-folder/.nojekyll
           echo "$PR_HEAD_SHA" > publish-folder/preview-revision.txt
@@ -107,7 +111,9 @@ jobs:
             revision=$(curl -fsS --max-time 15 "${PREVIEW_URL}preview-revision.txt?revision=${PR_HEAD_SHA}" || true)
             if [ "$revision" = "$PR_HEAD_SHA" ] &&
                curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}" &&
-               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}public/js/time-loop.js"; then
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}public/js/time-loop.js" &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}service-worker.js" &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}public/manifest.webmanifest"; then
               echo "Preview is live at ${PREVIEW_URL}"
               exit 0
             fi

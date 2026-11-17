@@ -32,6 +32,7 @@ jobs:
         run: |
           mkdir -p ./publish-folder/public/js
           cp ./index.html ./publish-folder/
+          sed "s/__PWA_VERSION__/${GITHUB_SHA}/g" service-worker.js > publish-folder/service-worker.js
           cp -r ./public/* ./publish-folder/public/
           touch ./publish-folder/.nojekyll
 
