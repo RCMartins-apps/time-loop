@@ -550,6 +550,26 @@ object Util {
     )
   }
 
+  def statsView(gameData: GameData): HtmlElement = {
+    import gameData._
+    def stat(label: String, value: Signal[String]): HtmlElement =
+      div(cls := "stats-row", span(cls := "stats-row__label", label), strong(child.text <-- value))
+    div(
+      cls := "stats-view",
+      stat("Total elapsed time", globalTimeElapsedLong.map(secondsToPrettyStr)),
+      p(cls := "stats-hint", "Game time progressed across all loops."),
+      stat("This loop", timeElapsedLong.map(secondsToPrettyStr)),
+      stat("Saved time", extraTimeLong.map(secondsToPrettyStr)),
+      stat("Loop", loopNumber.map(_.toString)),
+      stat("Actions completed", stats.map(_.globalActionCount.values.map(_.toLong).sum.toString)),
+      stat(
+        "Energy",
+        energyLong.combineWith(maxEnergyInt).map { case (energy, maximum) => s"$energy / $maximum" }
+      ),
+      stat("Tiredness", currentTiredSecond.map(value => f"$value%.2f / sec")),
+    )
+  }
+
   def installSettingsView(): HtmlElement =
     div(
       cls := "space-y-2",

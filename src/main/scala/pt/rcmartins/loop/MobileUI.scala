@@ -40,6 +40,7 @@ class MobileUI(
             case MobileTab.Skills    => skillsView()
             case MobileTab.Story     => storyView()
             case MobileTab.Settings  => settingsView()
+            case MobileTab.Stats => div(cls := "stats-page", h2("Stats"), Util.statsView(gameData))
           }
       ),
       bottomTabs(tabVar)
@@ -168,7 +169,6 @@ class MobileUI(
         span(
           child.text <-- timeElapsedLong.map(secondsToPrettyStr)
         ),
-
       ),
       div(
         cls := "flex justify-between px-2",
@@ -210,7 +210,7 @@ class MobileUI(
       )
 
     div(
-      cls := "h-16 shrink-0 bg-slate-900/80 ring-1 ring-slate-800 " +
+      cls := "mobile-tabs h-16 shrink-0 bg-slate-900/80 ring-1 ring-slate-800 " +
         "backdrop-blur flex items-stretch",
       tabButton(MobileTab.Actions, "Actions", "⚡"),
 //      tabButton(MobileTab.Map, "Map", "🧭"),
@@ -223,6 +223,7 @@ class MobileUI(
       child.maybe <-- showSkillsUI.map(show =>
         Option.when(show)(tabButton(MobileTab.Skills, "Skills", "📈"))
       ),
+      tabButton(MobileTab.Stats, "Stats", "📊"),
       tabButton(MobileTab.Settings, "Settings", "⚙️"),
     )
   }
@@ -239,6 +240,7 @@ object MobileUI {
     case object Inventory extends MobileTab
     case object Skills extends MobileTab
     case object Story extends MobileTab
+    case object Stats extends MobileTab
     case object Settings extends MobileTab
   }
 

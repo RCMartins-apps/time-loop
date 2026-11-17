@@ -96,58 +96,6 @@ class UI(
       )
     )
 
-  // Misc info (stats / timers)
-  private val miscView: ReactiveHtmlElement[HTMLDivElement] =
-    div(
-      cls := "space-y-2 text-sm",
-      div(
-        cls := "flex justify-between",
-        span("Time Elapsed"),
-        span(
-          child.text <-- timeElapsedLong.map(secondsToPrettyStr)
-        ),
-
-      ),
-      div(
-        cls := "flex justify-between",
-        span("Time Saved"),
-        span(
-          child.text <-- extraTimeLong.map(secondsToPrettyStr)
-        ),
-      ),
-      child.maybe <--
-        loopNumber.map(_ > 1).distinct.map {
-          case false =>
-            None
-          case true =>
-            Some(
-              div(
-                cls := "flex justify-between",
-                span("Loop Count"),
-                span(child.text <-- loopNumber.map(_.toString)),
-              )
-            )
-        },
-      div(
-        cls := "flex justify-between",
-        span("Energy"),
-        span(
-          child.text <-- energyLong.combineWith(maxEnergyInt).map { case (energy, maxEnergy) =>
-            f"$energy%d / $maxEnergy%d"
-          }
-        ),
-      ),
-      div(
-        cls := "flex justify-between",
-        span("Tiredness"),
-        span(
-          child.text <-- currentTiredSecond.map { tiredSecond =>
-            f"$tiredSecond%.2f / sec"
-          }
-        ),
-      ),
-    )
-
   /** Reusable section shells */
   private def panelCard(title: ReactiveHtmlElement[_], mods: Mod[HtmlElement]*): HtmlElement =
     div(
@@ -275,8 +223,8 @@ class UI(
         }
       ),
       panelCard(
-        span("Notes / Info"),
-        div(cls := "space-y-2 max-h-[30dvh] overflow-auto", miscView)
+        span("Stats"),
+        statsView(gameData)
       ),
       panelCard(span("Settings"), installSettingsView()),
       if (DEBUG_MODE)
