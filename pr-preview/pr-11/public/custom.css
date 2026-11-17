@@ -71,3 +71,13 @@
 .item-reference { display: inline-flex; align-items: baseline; gap: .25em; max-width: 100%; vertical-align: baseline; white-space: nowrap; }
 .item-reference__icon { display: inline-flex; align-self: center; width: 1.1em; height: 1.1em; flex: 0 0 1.1em; }
 .item-reference__icon svg { display: block; width: 100%; height: 100%; }
+
+.stats-view { min-width: 0; }
+.stats-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid #334155; font-size: 13px; line-height: 1.5; }
+.stats-row:last-child { border-bottom: 0; }
+.stats-row__label { color: #a8b8cc; }
+.stats-row strong { color: #f1f5f9; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stats-hint { font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 4px 0 8px; }
+.stats-page { padding: 4px; }
+.stats-page h2 { margin-bottom: 12px; font-size: 18px; font-weight: 600; }
+.mobile-tabs > button { min-width: 0; flex: 1 1 0; font-size: 10px; }
