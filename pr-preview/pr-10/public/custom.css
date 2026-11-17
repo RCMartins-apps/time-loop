@@ -7,21 +7,6 @@
   animation: fade-in 2.5s ease-out;
 }
 
-.install-shortcut {
-  position: fixed;
-  bottom: 5rem;
-  right: 1rem;
-  z-index: 40;
-  padding: .6rem 1rem;
-  border-radius: .75rem;
-  background: #047857;
-  color: white;
-  border: 1px solid #34d399;
-  font: inherit;
-}
-.install-shortcut button { cursor: pointer; padding: .2rem .4rem; }
-.install-shortcut button + button { margin-left: .5rem; border-left: 1px solid #34d399; padding-left: .75rem; }
-.install-shortcut button:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .install-help {
   max-width: min(24rem, calc(100vw - 2rem));
   border: 1px solid #475569;
