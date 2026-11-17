@@ -10,16 +10,9 @@ object ItemText {
   case class Part(text: String, item: Option[ItemType] = None)
 
   private lazy val names: Map[String, ItemType] = {
-    val canonical = ItemType.all.map(item => item.name.toLowerCase(Locale.ROOT) -> item)
-    (canonical ++ Seq(
-      "glycerin" -> ItemType.Glycerin,
-      "herb soap" -> ItemType.RosemarySoap,
-      "herb soaps" -> ItemType.RosemarySoap,
-      "rosemary soaps" -> ItemType.RosemarySoap,
-      "soap" -> ItemType.RosemarySoap,
-      "soaps" -> ItemType.RosemarySoap,
-      "lavender" -> ItemType.MagicLavender,
-    )).toMap
+    ItemType.all.flatMap { item =>
+      (item.name +: item.textAliases).map(_.toLowerCase(Locale.ROOT) -> item)
+    }.toMap
   }
 
   private lazy val references: Regex = {
@@ -28,8 +21,8 @@ object ItemText {
         if (name == "soap" || name == "soaps") "(?!\\s+(?:mold|shop|business)\\b)" else ""
       Regex.quote(name) + suffix
     }
-    ("(?i)(?:\\$\\d+(?:\\.\\d{2})?(?:\\s+coins)?|" +
-      terms.mkString("|") + ")").r
+    val currency = "\\$\\d+(?:\\.\\d{2})?(?:\\s+" + Regex.quote(ItemType.Coins.name) + ")?"
+    ("(?i)(?:" + currency + "|" + terms.mkString("|") + ")").r
   }
 
   def parts(text: String): Seq[Part] = {

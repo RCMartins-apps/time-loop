@@ -1,15 +1,15 @@
 package pt.rcmartins.loop.model
 
-import pt.rcmartins.loop.Constants
 import zio.json.{JsonDecoder, JsonEncoder}
 
 import scala.collection.mutable
 
 trait ItemType {
   val id: Int
-  val name: String
-  val iconPath: String = ""
-  val iconColor: String = "text-stone-50"
+  def name: String = ItemCatalog(id).name
+  def iconPath: String = ItemCatalog(id).iconPath
+  def iconColor: String = ItemCatalog(id).iconColor
+  def textAliases: Seq[String] = ItemCatalog(id).aliases
   val visible: Boolean = true
   val noInventoyLimit: Boolean = false
   val inventoryOrder: Int
@@ -31,9 +31,6 @@ object ItemType {
 
   val Coins: ItemType = addNewItem(new ItemType {
     val id: Int = 1
-    val name: String = "Coins"
-    override val iconPath: String = Constants.Icons.TwoCoins
-    override val iconColor: String = "text-yellow-300"
     override val noInventoyLimit: Boolean = true
     val inventoryOrder: Int = 1
     val foodValueLong: Long = 0L
@@ -45,53 +42,36 @@ object ItemType {
 
   val Rosemary: ItemType = addNewItem(new ItemType {
     val id: Int = 2
-    val name: String = "Rosemary"
-    override val iconPath: String = Constants.Icons.Olive
-    override val iconColor: String = "text-green-500"
     val inventoryOrder: Int = 2
     val foodValueLong: Long = 0L
   })
 
   val Glycerin: ItemType = addNewItem(new ItemType {
     val id: Int = 3
-    val name: String = "Glycerin Based Soap"
-    override val iconPath: String = Constants.Icons.StoneBlock
     val inventoryOrder: Int = 3
     val foodValueLong: Long = 0L
   })
 
   val MeltedGlycerin: ItemType = addNewItem(new ItemType {
     val id: Int = 4
-    val name: String = "Melted Glycerin"
-    override val iconPath: String = Constants.Icons.BubblingBowl
-    override val iconColor: String = "text-neutral-300"
     val inventoryOrder: Int = 4
     val foodValueLong: Long = 0L
   })
 
   val RosemarySoap: ItemType = addNewItem(new ItemType {
     val id: Int = 5
-    val name: String = "Rosemary Soap"
-    override val iconPath: String = Constants.Icons.Soap
-    override val iconColor: String = "text-green-300"
     val inventoryOrder: Int = 5
     val foodValueLong: Long = 0L
   })
 
   val MagicLavender: ItemType = addNewItem(new ItemType {
     val id: Int = 6
-    val name: String = "Magic Lavender"
-    override val iconPath: String = Constants.Icons.Olive
-    override val iconColor: String = "text-purple-300"
     val inventoryOrder: Int = 6
     val foodValueLong: Long = 0L
   })
 
   val MagicLavenderSoap: ItemType = addNewItem(new ItemType {
     val id: Int = 14
-    val name: String = "Magic Lavender Soap"
-    override val iconPath: String = Constants.Icons.Soap
-    override val iconColor: String = "text-purple-300"
     val inventoryOrder: Int = 7
     val foodValueLong: Long = 0L
 
@@ -104,9 +84,6 @@ object ItemType {
 
   val FrozenMomo: ItemType = addNewItem(new ItemType {
     val id: Int = 7
-    val name: String = "Frozen Momo"
-    override val iconPath: String = Constants.Icons.DumplingBao
-    override val iconColor: String = "text-cyan-500"
     val inventoryOrder: Int = 21
     val foodValueLong: Long = 0L
   })
@@ -115,35 +92,24 @@ object ItemType {
 
   val Rice: ItemType = addNewItem(new ItemType {
     val id: Int = 8
-    val name: String = "Rice"
-    override val iconPath: String = Constants.Icons.BowlOfRice
     val inventoryOrder: Int = 31
     val foodValueLong: Long = 5L
   })
 
   val WildCherries: ItemType = addNewItem(new ItemType {
     val id: Int = 9
-    val name: String = "Cherries"
     val inventoryOrder: Int = 32
     val foodValueLong: Long = 6L
-    override val iconPath: String = Constants.Icons.Cherry
-    override val iconColor: String = "text-red-600"
   })
 
   val Momo: ItemType = addNewItem(new ItemType {
     val id: Int = 10
-    val name: String = "Momo"
-    override val iconPath: String = Constants.Icons.DumplingBao
-    override val iconColor: String = "text-yellow-100"
     val inventoryOrder: Int = 33
     val foodValueLong: Long = 10L
   })
 
   val Noodles: ItemType = addNewItem(new ItemType {
     val id: Int = 11
-    override val iconPath: String = Constants.Icons.Noodles
-    override val iconColor: String = "text-yellow-400"
-    val name: String = "Noodles"
     val inventoryOrder: Int = 34
     val foodValueLong: Long = 12L
   })

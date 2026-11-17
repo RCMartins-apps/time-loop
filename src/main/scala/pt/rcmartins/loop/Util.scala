@@ -14,7 +14,10 @@ import scala.annotation.tailrec
 object Util {
 
   def itemText(text: String): Seq[HtmlElement] =
-    ItemText.parts(text).map {
+    renderItemParts(ItemText.parts(text))
+
+  private def renderItemParts(parts: Seq[ItemText.Part]): Seq[HtmlElement] =
+    parts.map {
       case ItemText.Part(label, Some(item)) =>
         span(
           cls := "item-reference",
@@ -167,7 +170,7 @@ object Util {
             ),
             p(
               cls := "action-card__effect",
-              children <-- actionSignal.map(_.data.effectLabel.label).distinct.map(itemText)
+              children <-- actionSignal.map(_.data.effectLabel.parts).distinct.map(renderItemParts)
             ),
           ),
         ),

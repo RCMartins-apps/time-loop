@@ -1,10 +1,14 @@
 package pt.rcmartins.loop.model
 
 import pt.rcmartins.loop.model.ItemType.Coins
+import pt.rcmartins.loop.ItemText
+import pt.rcmartins.loop.ItemText.Part
 
 sealed trait EffectLabel {
 
   def label: String
+
+  def parts: Seq[Part] = ItemText.parts(label)
 
 }
 
@@ -25,15 +29,40 @@ object EffectLabel {
   }
 
   case class SellSoap(cost: Int) extends EffectLabel {
-    override val label: String = s"Sell your soaps for ${Coins.amountFormatInv(cost)}"
+    override val label: String =
+      s"Sell ${ItemType.RosemarySoap.name} for ${Coins.amountFormatInv(cost)}"
+
+    override def parts: Seq[Part] = Seq(
+      Part("Sell "),
+      Part(ItemType.RosemarySoap.name, Some(ItemType.RosemarySoap)),
+      Part(" for "),
+      Part(Coins.amountFormatInv(cost), Some(Coins))
+    )
+
   }
 
   case object GetSoapMold extends EffectLabel {
-    override val label: String = "Allows making soaps from glycerin."
+    override val label: String =
+      s"Allows making ${ItemType.RosemarySoap.name} from ${ItemType.Glycerin.name}."
+
+    override def parts: Seq[Part] = Seq(
+      Part("Allows making "),
+      Part(ItemType.RosemarySoap.name, Some(ItemType.RosemarySoap)),
+      Part(" from "),
+      Part(ItemType.Glycerin.name, Some(ItemType.Glycerin)),
+      Part(".")
+    )
+
   }
 
   case class Cooking(itemType: ItemType, amount: Int) extends EffectLabel {
     override val label: String = s"Cook ${itemType.amountFormatInv(amount)} ${itemType.name}."
+    override def parts: Seq[Part] = Seq(
+      Part("Cook "),
+      Part(s"${itemType.amountFormatInv(amount)} ${itemType.name}", Some(itemType)),
+      Part(".")
+    )
+
   }
 
   case class GetInventoryIncrease(name: String, maxSize: Int) extends EffectLabel {
@@ -46,22 +75,46 @@ object EffectLabel {
 
   case class GetItem(itemType: ItemType, amount: Int) extends EffectLabel {
     override val label: String = s"Get ${itemType.amountFormatInv(amount)} ${itemType.name}."
+    override def parts: Seq[Part] = Seq(
+      Part("Get "),
+      Part(s"${itemType.amountFormatInv(amount)} ${itemType.name}", Some(itemType)),
+      Part(".")
+    )
+
   }
 
   case class BuyItem(itemType: ItemType, amount: Int, cost: Int) extends EffectLabel {
     override val label: String = s"Cost: ${Coins.amountFormatInv(cost)}"
+    override def parts: Seq[Part] =
+      Seq(Part("Cost: "), Part(Coins.amountFormatInv(cost), Some(Coins)))
+
   }
 
   case class SellItem(itemType: ItemType, amount: Int, coinsGain: Int) extends EffectLabel {
     override val label: String = s"Sell for ${Coins.amountFormatInv(coinsGain)}."
+    override def parts: Seq[Part] =
+      Seq(Part("Sell for "), Part(Coins.amountFormatInv(coinsGain), Some(Coins)), Part("."))
+
   }
 
   case class BuyUpgrade(cost: Int) extends EffectLabel {
     override val label: String = s"Cost: ${Coins.amountFormatInv(cost)}"
+    override def parts: Seq[Part] =
+      Seq(Part("Cost: "), Part(Coins.amountFormatInv(cost), Some(Coins)))
+
   }
 
   case class CraftItem(itemType: ItemType, amount: Int, cost: Seq[(ItemType, Int)])
       extends EffectLabel {
+    override def parts: Seq[Part] =
+      if (cost.isEmpty)
+        Seq(Part("Get "), Part(s"$amount ${itemType.name}", Some(itemType)), Part("."))
+      else
+        Seq(Part("Cost: ")) ++ cost.zipWithIndex.flatMap { case ((item, count), index) =>
+          val separator = if (index == 0) Seq.empty else Seq(Part(" and "))
+          separator :+ Part(s"$count ${item.name}", Some(item))
+        } :+ Part(".")
+
     override val label: String = {
       if (cost.isEmpty)
         s"Get $amount ${itemType.name}."

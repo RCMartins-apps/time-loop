@@ -202,7 +202,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.ExploreForestForLavender,
         area = _ => Seq(Area7_Forest),
-        title = "Explore the forest for lavender",
+        title = s"Explore the forest for ${ItemType.MagicLavender.name}",
         effectLabel = EffectLabel.Explore,
         kind = ActionKind.Exploring,
         actionTime = ActionTime.Standard(25),
@@ -278,7 +278,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.SpeakToShopKeeper,
         area = _ => Seq(Area4_GeneralStore),
-        title = """Show your soaps""",
+        title = s"Show your ${ItemType.RosemarySoap.name}",
         effectLabel = EffectLabel.Empty,
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(15),
@@ -292,7 +292,8 @@ object StoryActions {
       tradeItemForBag(
         actionDataType = Arc1DataType.TradeSoapsForBag,
         area = _ => Seq(Area4_GeneralStore),
-        title = """Trade 5 Herb Soaps for a Small Bag + 1 Glycerin""",
+        title =
+          s"Trade 5 ${ItemType.RosemarySoap.name} for a Small Bag + 1 ${ItemType.Glycerin.name}",
         effectLabel = EffectLabel.Custom("Note: Small Bag has 10 spaces"),
         cost = Seq(ItemType.RosemarySoap -> 5),
         bonus = Seq(ItemType.Glycerin -> 1),
@@ -382,7 +383,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.SellSoapInNeighborhood,
         area = _ => Seq(Area2_Neighborhood),
-        title = "Sell soap to your neighbors",
+        title = s"Sell ${ItemType.RosemarySoap.name} to your neighbors",
         effectLabel = EffectLabel.SellSoap(2.euros),
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(8),
@@ -401,7 +402,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.NeighborhoodTalkAboutMarket,
         area = _ => Seq(Area2_Neighborhood),
-        title = """Talk with neighbors about selling soaps in the market""",
+        title = s"Talk with neighbors about selling ${ItemType.RosemarySoap.name} in the market",
         effectLabel = EffectLabel.Empty,
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(20),
@@ -429,7 +430,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.SetupSoapStallInMarket,
         area = _ => Seq(Area3_Market),
-        title = "Setup a stall in the market to sell soap",
+        title = s"Setup a stall in the market to sell ${ItemType.RosemarySoap.name}",
         effectLabel = EffectLabel.Empty,
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(20),
@@ -441,7 +442,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.SellSoapToPeopleInMarket,
         area = _ => Seq(Area3_Market),
-        title = "Sell Soap to people in the market",
+        title = s"Sell ${ItemType.RosemarySoap.name} to people in the market",
         effectLabel = EffectLabel.SellSoap(3.euros),
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(9),
@@ -574,7 +575,7 @@ object StoryActions {
       ActionData(
         actionDataType = Arc1DataType.SellSoapToPeopleInSoapShop,
         area = _ => Seq(Area6_MySoapShop),
-        title = "Sell Soap to people in your shop",
+        title = s"Sell ${ItemType.RosemarySoap.name} to people in your shop",
         effectLabel = EffectLabel.SellSoap(4.euros),
         kind = ActionKind.Social,
         actionTime = ActionTime.Standard(10),
