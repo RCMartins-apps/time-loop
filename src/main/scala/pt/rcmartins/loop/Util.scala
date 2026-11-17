@@ -902,18 +902,12 @@ object Util {
   def installSettingsView(): HtmlElement =
     div(
       cls := "space-y-2",
-      p("Install for offline play. You can hide the floating shortcut and install here later."),
+      p("Install the game for offline play."),
       button(
         tpe := "button",
         cls := "px-3 py-1 bg-slate-700 rounded hover:bg-slate-600",
         dataAttr("install-action") := "install",
         "Install game",
-      ),
-      button(
-        tpe := "button",
-        cls := "px-3 py-1 bg-slate-700 rounded hover:bg-slate-600",
-        dataAttr("install-action") := "toggle-shortcut",
-        "Hide install shortcut",
       ),
     )
 
