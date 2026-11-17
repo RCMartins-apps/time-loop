@@ -902,7 +902,6 @@ object Util {
   def installSettingsView(): HtmlElement =
     div(
       cls := "space-y-2",
-      p("Install the game for offline play."),
       button(
         tpe := "button",
         cls := "px-3 py-1 bg-slate-700 rounded hover:bg-slate-600",
