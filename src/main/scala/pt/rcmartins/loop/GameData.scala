@@ -58,14 +58,17 @@ class GameData(
 
   val stats: Signal[Stats] = gameState.map(_.stats).distinct
 
-  val showMapUI: Signal[Boolean] =
-    stats.map(_.getGlobalCount(ActionDataType.Arc1DataType.PickupCoins.id) >= 10).distinct
+  private val discoveredUI: Signal[UIDiscovery] = gameState.map(_.discoveredUI).distinct
+  val showInventoryUI: Signal[Boolean] = discoveredUI.map(_.inventory).distinct
+  val showMapUI: Signal[Boolean] = discoveredUI.map(_.map).distinct
+  val showStoryUI: Signal[Boolean] = discoveredUI.map(_.story).distinct
+  val showSkillsUI: Signal[Boolean] = discoveredUI.map(_.skills).distinct
 
   def runUpdateGameState(): Unit = {
     val initialGameState = gameStateVar.now()
     val currentTimeEpoch = System.currentTimeMillis()
     val newState = gameLogic.update(initialGameState, currentTimeEpoch)
-    gameStateVar.set(newState)
+    gameStateVar.set(newState.copy(uiDiscovery = newState.discoveredUI))
   }
 
   def loadGameState(newGameState: GameState): Unit =

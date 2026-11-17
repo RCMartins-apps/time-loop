@@ -24,14 +24,23 @@ class MobileUI(
       topFixed(),
       div(
         cls := "flex-1 min-h-0 overflow-auto p-3",
-        child <-- tabVar.signal.map {
-          case MobileTab.Actions => actionsView()
+        child <-- tabVar.signal
+          .combineWith(showInventoryUI, showStoryUI, showSkillsUI)
+          .map {
+            case (MobileTab.Inventory, false, _, _) => MobileTab.Actions
+            case (MobileTab.Story, _, false, _)     => MobileTab.Actions
+            case (MobileTab.Skills, _, _, false)    => MobileTab.Actions
+            case (tab, _, _, _)                     => tab
+          }
+          .distinct
+          .map {
+            case MobileTab.Actions => actionsView()
 //          case MobileTab.Map       => mapView()
-          case MobileTab.Inventory => inventoryView()
-          case MobileTab.Skills    => skillsView()
-          case MobileTab.Story     => storyView()
-          case MobileTab.Settings  => settingsView()
-        }
+            case MobileTab.Inventory => inventoryView()
+            case MobileTab.Skills    => skillsView()
+            case MobileTab.Story     => storyView()
+            case MobileTab.Settings  => settingsView()
+          }
       ),
       bottomTabs(tabVar)
     )
@@ -52,16 +61,20 @@ class MobileUI(
           }
         )
       ),
-      div(
-        cls := "shrink-0",
-        div(
-          cls := "flex items-center justify-center p-2",
-          Util.worldMiniMap(
-            characterArea,
-            nextMoveActions,
-            area => gameData.selectNextMoveAction(area),
+      child.maybe <-- showMapUI.map(show =>
+        Option.when(show) {
+          div(
+            cls := "shrink-0",
+            div(
+              cls := "flex items-center justify-center p-2",
+              Util.worldMiniMap(
+                characterArea,
+                nextMoveActions,
+                area => gameData.selectNextMoveAction(area),
+              )
+            )
           )
-        )
+        }
       )
     )
   }
@@ -206,9 +219,15 @@ class MobileUI(
         "backdrop-blur flex items-stretch",
       tabButton(MobileTab.Actions, "Actions", "⚡"),
 //      tabButton(MobileTab.Map, "Map", "🧭"),
-      tabButton(MobileTab.Inventory, "Inventory", "🎒"),
-      tabButton(MobileTab.Story, "Story", "📖"),
-      tabButton(MobileTab.Skills, "Skills", "📈"),
+      child.maybe <-- showInventoryUI.map(show =>
+        Option.when(show)(tabButton(MobileTab.Inventory, "Inventory", "🎒"))
+      ),
+      child.maybe <-- showStoryUI.map(show =>
+        Option.when(show)(tabButton(MobileTab.Story, "Story", "📖"))
+      ),
+      child.maybe <-- showSkillsUI.map(show =>
+        Option.when(show)(tabButton(MobileTab.Skills, "Skills", "📈"))
+      ),
       tabButton(MobileTab.Settings, "Settings", "⚙️"),
     )
   }

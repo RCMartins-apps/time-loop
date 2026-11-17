@@ -29,6 +29,7 @@ case class GameStateSaved(
     inProgressStoryActions: Seq[RunTimeStoryAction],
     buffs: Buffs,
     preferencesSaved: PreferencesSaved,
+    uiDiscovery: UIDiscovery = UIDiscovery(),
 ) extends GameSatedSavedVersion {
 
   def toGameState(currentTimeMillis: Long): GameState =
@@ -59,6 +60,7 @@ case class GameStateSaved(
       inProgressStoryActions = inProgressStoryActions,
       buffs = buffs,
       preferences = preferencesSaved.toPreferences,
+      uiDiscovery = uiDiscovery,
     )
 
 }
@@ -91,6 +93,7 @@ object GameStateSaved {
       inProgressStoryActions = gameState.inProgressStoryActions,
       buffs = gameState.buffs,
       preferencesSaved = PreferencesSaved.fromPreferences(gameState.preferences),
+      uiDiscovery = gameState.discoveredUI,
     )
 
   implicit val decoder: JsonDecoder[GameStateSaved] = DeriveJsonDecoder.gen[GameStateSaved]
