@@ -899,6 +899,17 @@ object Util {
     )
   }
 
+  def installSettingsView(): HtmlElement =
+    div(
+      cls := "space-y-2",
+      button(
+        tpe := "button",
+        cls := "px-3 py-1 bg-slate-700 rounded hover:bg-slate-600",
+        dataAttr("install-action") := "install",
+        "Install game",
+      ),
+    )
+
   def debugView(
       gameData: GameData,
       saveLoad: SaveLoad,
