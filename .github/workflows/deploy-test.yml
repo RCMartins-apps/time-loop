@@ -31,12 +31,15 @@ jobs:
         run: sbt test
 
       - name: Prepare preview
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           mkdir -p publish-folder/public
           cp index.html publish-folder/
           cp -r public/* publish-folder/public/
           touch publish-folder/.nojekyll
+          echo "$PR_HEAD_SHA" > publish-folder/preview-revision.txt
 
       - name: Upload preview
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
@@ -93,6 +96,25 @@ jobs:
           branch: gh-pages
           folder: publish-folder
           target-folder: pr-preview/pr-${{ github.event.number }}
+
+      - name: Verify published preview
+        if: steps.pr.outputs.deploy == 'true'
+        env:
+          PREVIEW_URL: https://rcmartins-apps.github.io/time-loop/pr-preview/pr-${{ github.event.number }}/
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          for attempt in $(seq 1 24); do
+            revision=$(curl -fsS --max-time 15 "${PREVIEW_URL}preview-revision.txt?revision=${PR_HEAD_SHA}" || true)
+            if [ "$revision" = "$PR_HEAD_SHA" ] &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}" &&
+               curl -fsS --max-time 15 -o /dev/null "${PREVIEW_URL}public/js/time-loop.js"; then
+              echo "Preview is live at ${PREVIEW_URL}"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Preview did not become available on GitHub Pages in time." >&2
+          exit 1
 
       - name: Preview link
         if: steps.pr.outputs.deploy == 'true'
