@@ -1,19 +1,17 @@
 package pt.rcmartins.loop
 
-import com.raquo.airstream.ownership.OneTimeOwner
 import com.raquo.laminar.api.L._
 import com.raquo.laminar.nodes.ReactiveHtmlElement
 import com.softwaremill.quicklens.ModifyPimp
 import org.scalajs.dom
 import org.scalajs.dom.HTMLDivElement
+import pt.rcmartins.loop.GameUtils.Toast
 import pt.rcmartins.loop.data.StoryActions
 import pt.rcmartins.loop.model._
 
 import scala.annotation.tailrec
 
 object Util {
-
-  private val owner = new Owner {}
 
   private val baseCardClasses: String =
     "rounded-2xl p-4 pb-5 bg-slate-800/60 ring-1 ring-slate-700 shadow transition "
@@ -344,7 +342,6 @@ object Util {
       gameData: GameData,
   ): HtmlElement = {
     val data: Signal[ActionData] = actionSignal.map(_.data).distinct
-    val isSelected: Var[Boolean] = Var(false)
     val selectedLimit: Var[Int] = Var(-1)
 
     val selectedCls =
@@ -357,19 +354,6 @@ object Util {
       data.combineWith(gameData.gameState).map { case (actionData, gameState) =>
         ActiveActionData.isInvalid(gameState, actionData)
       }
-
-    isSelected.signal
-      .sample(isSelected, selectedLimit, actionSignal, isDisabled)
-      .foreach {
-        case (true, limit, action, false) =>
-          gameData.selectNextAction(
-            action.id,
-            Option
-              .when(action.data.forceMaxAmountOfActionsIs1)(1)
-              .orElse(Some(limit).filter(_ != -1))
-          )
-        case _ =>
-      }(owner)
 
     val invalidTooltipText: Signal[String] =
       data
@@ -420,8 +404,15 @@ object Util {
           case (optId, actionId) => optId.map(_._1).contains(actionId)
         },
         cls(baseCardHoverClasses) <-- isDisabled.map(!_),
-        onClick --> { _ =>
-          isSelected.set(true)
+        onClick.compose(_.withCurrentValueOf(selectedLimit.signal, actionSignal, isDisabled)) --> {
+          case (_, limit, action, false) =>
+            gameData.selectNextAction(
+              action.id,
+              Option
+                .when(action.data.forceMaxAmountOfActionsIs1)(1)
+                .orElse(Some(limit).filter(_ != -1))
+            )
+          case _ =>
         },
 
         // Content
@@ -757,10 +748,10 @@ object Util {
     // Center (current location)
     def cellCenter(): HtmlElement =
       div(
-        cls := "flex items-center justify-center w-32 h-10",
+        cls := "flex items-center justify-center w-full min-w-0 min-h-10",
         div(
           cls := "px-3 py-1 rounded-full text-[11px] font-semibold " +
-            "bg-emerald-600 text-white shadow whitespace-nowrap",
+            "bg-emerald-600 text-white shadow",
           div(
             cls := "w-5 h-5 inline-block mr-1 align-middle",
             Constants.Icons.CreateIconElement(currentArea.map(_.iconPath), Val("")),
@@ -772,7 +763,7 @@ object Util {
     // Neighbor cell in a given direction
     def cellDir(dir: CharacterArea => Option[CharacterArea]): HtmlElement =
       div(
-        cls := "flex items-center justify-center w-32 h-10",
+        cls := "flex items-center justify-center w-full min-w-0 min-h-10",
         child.maybe <-- currentArea.combineWith(nextMoveActions).map { case (loc, moveActions) =>
           val targetAreaOpt: Option[CharacterArea] = dir(loc)
           moveActions
@@ -784,7 +775,7 @@ object Util {
                 cls := "px-3 py-1 rounded-full text-[11px] " +
                   "border border-slate-600 bg-slate-800/80 text-slate-200 " +
                   "hover:bg-slate-700/80 hover:text-white transition " +
-                  "whitespace-nowrap",
+                  "whitespace-normal",
                 onClick --> { _ => onMove(targetArea) },
                 div(
                   cls := "w-5 h-5 inline-block mr-1 align-middle",
@@ -802,12 +793,12 @@ object Util {
       )
 
     div(
-      cls := "relative inline-block p-2 rounded-2xl bg-slate-900/80 " +
+      cls := "relative inline-block w-full max-w-[26rem] p-2 rounded-2xl bg-slate-900/80 " +
         "ring-1 ring-slate-700 shadow",
 
       // The 3x3 grid
       div(
-        cls := "grid grid-cols-3 grid-rows-3 gap-1",
+        cls := "grid grid-cols-3 gap-1",
         // top row
         cellDir(_.connection(Dir8.TopLeft)),
         cellDir(_.connection(Dir8.Top)),
@@ -912,7 +903,6 @@ object Util {
       gameData: GameData,
       saveLoad: SaveLoad,
   ): ReactiveHtmlElement[HTMLDivElement] = {
-    val owner: Owner = new OneTimeOwner(() => println("Debug view owner disposed"))
     val addEnergyBus: EventBus[Int] = new EventBus[Int]()
     val multiplyAllSkillsBus: EventBus[Double] = new EventBus[Double]()
     val plusExtraTimeBus: EventBus[Long] = new EventBus[Long]()
@@ -920,81 +910,84 @@ object Util {
     val exportSaveStringToClipboard: EventBus[Unit] = new EventBus[Unit]()
     val importStringFromClipboard: EventBus[Unit] = new EventBus[Unit]()
 
-    addEnergyBus.events
-      .withCurrentValueOf(gameData.gameState)
-      .foreach { case (amount, state) =>
-        val newEnergy = state.energyMicro + amount.toLong * 1_000_000L
-        val cappedEnergy = Math.min(newEnergy, state.maxEnergyMicro)
-        val newState: GameState =
-          state
-            .modify(_.energyMicro)
-            .setTo(cappedEnergy)
-            .modify(_.stats.usedCheats)
-            .setTo(true)
-        gameData.loadGameState(newState)
-      }(owner)
-
-    multiplyAllSkillsBus.events
-      .withCurrentValueOf(gameData.gameState)
-      .foreach { case (multiplier, state) =>
-        val newState: GameState =
-          state
-            .modify(_.skills)
-            .using(
-              _.mapSkills {
-                _.modifyAll(_.initialBonusMultiplier, _.currentBonusMultiplier)
-                  .setTo(multiplier)
-              }
-            )
-            .modify(_.stats.usedCheats)
-            .setTo(true)
-        gameData.loadGameState(newState)
-      }(owner)
-
-    plusExtraTimeBus.events
-      .withCurrentValueOf(gameData.gameState)
-      .foreach { case (extraTimeMicro, state) =>
-        val newState: GameState =
-          state
-            .modify(_.extraTimeMicro)
-            .using(_ + extraTimeMicro)
-            .modify(_.stats.usedCheats)
-            .setTo(true)
-        gameData.loadGameState(newState)
-      }(owner)
-
-    speedSettingBus.events
-      .withCurrentValueOf(gameData.gameState)
-      .foreach { case (multiplier, state) =>
-        val newState: GameState =
-          state
-            .modify(_.preferences.speedMultiplier)
-            .setTo(multiplier)
-        gameData.loadGameState(newState)
-      }(owner)
-
-    exportSaveStringToClipboard.events
-      .withCurrentValueOf(gameData.gameState)
-      .foreach { state =>
-        dom.window.navigator.clipboard.writeText(saveLoad.saveString(state))
-        gameData.utils.showToast("Copied to clipboard!")
-      }(owner)
-
-    importStringFromClipboard.events.foreach { _ =>
-      dom.window.navigator.clipboard
-        .readText()
-        .toFuture
-        .foreach { str =>
-          saveLoad.loadString(str).foreach { loadedState =>
-            gameData.loadGameState(loadedState)
-            saveLoad.saveToLocalStorage(loadedState)
-            gameData.utils.showToast("Game loaded!")
-          }
-        }(scala.scalajs.concurrent.JSExecutionContext.queue)
-    }(owner)
-
     div(
       cls := "flex flex-col gap-2",
+      onMountCallback { ctx =>
+        val owner: Owner = ctx.owner
+        addEnergyBus.events
+          .withCurrentValueOf(gameData.gameState)
+          .foreach { case (amount, state) =>
+            val newEnergy = state.energyMicro + amount.toLong * 1_000_000L
+            val cappedEnergy = Math.min(newEnergy, state.maxEnergyMicro)
+            val newState: GameState =
+              state
+                .modify(_.energyMicro)
+                .setTo(cappedEnergy)
+                .modify(_.stats.usedCheats)
+                .setTo(true)
+            gameData.loadGameState(newState)
+          }(owner)
+
+        multiplyAllSkillsBus.events
+          .withCurrentValueOf(gameData.gameState)
+          .foreach { case (multiplier, state) =>
+            val newState: GameState =
+              state
+                .modify(_.skills)
+                .using(
+                  _.mapSkills {
+                    _.modifyAll(_.initialBonusMultiplier, _.currentBonusMultiplier)
+                      .setTo(multiplier)
+                  }
+                )
+                .modify(_.stats.usedCheats)
+                .setTo(true)
+            gameData.loadGameState(newState)
+          }(owner)
+
+        plusExtraTimeBus.events
+          .withCurrentValueOf(gameData.gameState)
+          .foreach { case (extraTimeMicro, state) =>
+            val newState: GameState =
+              state
+                .modify(_.extraTimeMicro)
+                .using(_ + extraTimeMicro)
+                .modify(_.stats.usedCheats)
+                .setTo(true)
+            gameData.loadGameState(newState)
+          }(owner)
+
+        speedSettingBus.events
+          .withCurrentValueOf(gameData.gameState)
+          .foreach { case (multiplier, state) =>
+            val newState: GameState =
+              state
+                .modify(_.preferences.speedMultiplier)
+                .setTo(multiplier)
+            gameData.loadGameState(newState)
+          }(owner)
+
+        exportSaveStringToClipboard.events
+          .withCurrentValueOf(gameData.gameState)
+          .foreach { state =>
+            dom.window.navigator.clipboard.writeText(saveLoad.saveString(state))
+            gameData.utils.showToast("Copied to clipboard!")
+          }(owner)
+
+        importStringFromClipboard.events.foreach { _ =>
+          dom.window.navigator.clipboard
+            .readText()
+            .toFuture
+            .foreach { str =>
+              saveLoad.loadString(str).foreach { loadedState =>
+                gameData.loadGameState(loadedState)
+                saveLoad.saveToLocalStorage(loadedState)
+                gameData.utils.showToast("Game loaded!")
+              }
+            }(scala.scalajs.concurrent.JSExecutionContext.queue)
+        }(owner)
+
+      },
       button(
         cls := "px-3 py-1 bg-slate-700 rounded hover:bg-slate-600",
         "Loop Now!",
@@ -1080,6 +1073,40 @@ object Util {
     permanentBonus match {
       case PermanentBonus.HalfTiredness => Constants.Icons.Strong
     }
+
+  def toastContainer(gameData: GameData): ReactiveHtmlElement[HTMLDivElement] =
+    div(
+      cls := "fixed top-4 right-4 space-y-2 z-50",
+      children <-- gameData.utils.toastsVar.signal.split(_.id) { case (_, toast, _) =>
+        renderToast(gameData, toast)
+      }
+    )
+
+  private def renderToast(gameData: GameData, t: Toast): HtmlElement =
+    div(
+      idAttr := t.id.toString,
+      cls := "bg-slate-900 text-white text-sm px-4 py-2 rounded shadow-lg " +
+        "opacity-0 transition-opacity duration-300",
+      onMountCallback { ctx =>
+        // fade in
+        ctx.thisNode.ref.classList.add("opacity-100")
+
+        // schedule auto-remove
+        dom.window.setTimeout(
+          () => {
+            ctx.thisNode.ref.classList.remove("opacity-100")
+            dom.window.setTimeout(
+              () => {
+                gameData.utils.toastsVar.update(_.filterNot(_.id == t.id))
+              },
+              300
+            ) // wait for fade-out transition
+          },
+          2000
+        ) // toast visible for 2s
+      },
+      t.message
+    )
 
   def secondsToPrettyStr(totalSeconds: Long): String = {
     val hours = totalSeconds / 3600

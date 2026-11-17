@@ -76,6 +76,7 @@ object Main {
           case false => ui
           case true  => mobileUI
         },
+        Util.toastContainer(gameData),
       )
     )
   }

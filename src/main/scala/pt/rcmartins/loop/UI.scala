@@ -1,12 +1,8 @@
 package pt.rcmartins.loop
 
-import com.raquo.airstream.ownership.OneTimeOwner
 import com.raquo.laminar.api.L._
 import com.raquo.laminar.nodes.ReactiveHtmlElement
-import com.softwaremill.quicklens.ModifyPimp
-import org.scalajs.dom
-import org.scalajs.dom.{HTMLDivElement, HTMLUListElement}
-import pt.rcmartins.loop.GameUtils.Toast
+import org.scalajs.dom.HTMLDivElement
 import pt.rcmartins.loop.Util._
 import pt.rcmartins.loop.data.StoryActions
 import pt.rcmartins.loop.model._
@@ -40,8 +36,7 @@ class UI(
           centerColumn()
         ),
         div(cls := "order-3 md:order-3", rightSidebar())
-      ),
-      toastContainer
+      )
     )
   }
 
@@ -305,38 +300,6 @@ class UI(
         )
       else
         emptyNode
-    )
-
-  private def toastContainer: ReactiveHtmlElement[HTMLDivElement] =
-    div(
-      cls := "fixed top-4 right-4 space-y-2 z-50",
-      children <-- gameData.utils.toastsVar.signal.map(_.map(renderToast))
-    )
-
-  private def renderToast(t: Toast): HtmlElement =
-    div(
-      idAttr := t.id.toString,
-      cls := "bg-slate-900 text-white text-sm px-4 py-2 rounded shadow-lg " +
-        "opacity-0 transition-opacity duration-300",
-      onMountCallback { ctx =>
-        // fade in
-        ctx.thisNode.ref.classList.add("opacity-100")
-
-        // schedule auto-remove
-        dom.window.setTimeout(
-          () => {
-            ctx.thisNode.ref.classList.remove("opacity-100")
-            dom.window.setTimeout(
-              () => {
-                gameData.utils.toastsVar.update(_.filterNot(_.id == t.id))
-              },
-              300
-            ) // wait for fade-out transition
-          },
-          2000
-        ) // toast visible for 2s
-      },
-      t.message
     )
 
 }

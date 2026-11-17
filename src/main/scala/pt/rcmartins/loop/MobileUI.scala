@@ -23,7 +23,7 @@ class MobileUI(
       cls := "h-[100dvh] flex flex-col bg-slate-900 text-slate-100",
       topFixed(),
       div(
-        cls := "flex-1 overflow-auto p-3",
+        cls := "flex-1 min-h-0 overflow-auto p-3",
         child <-- tabVar.signal.map {
           case MobileTab.Actions => actionsView()
 //          case MobileTab.Map       => mapView()
@@ -42,9 +42,9 @@ class MobileUI(
 
   private def actionsView(): ReactiveHtmlElement[HTMLDivElement] = {
     div(
-      cls := "h-full flex flex-col",
+      cls := "h-full min-h-0 flex flex-col",
       div(
-        cls := "flex-1 overflow-y-auto",
+        cls := "flex-1 min-h-0 overflow-y-auto",
         div(
           cls := "grid gap-1 sm:grid-cols-2 p-2",
           children <-- nextActions.split(_.id) { case (_, _, action) =>
@@ -86,7 +86,7 @@ class MobileUI(
 
   private def storyView(): ReactiveHtmlElement[HTMLDivElement] = {
     div(
-      cls := "overflow-y-auto",
+      cls := "h-full overflow-y-auto",
       children <--
         storyActionsHistory.split(_.id) { case (_, StoryLineHistory(_, line), _) =>
           p(
@@ -123,7 +123,7 @@ class MobileUI(
 
   private def topFixed(): ReactiveHtmlElement[HTMLDivElement] =
     div(
-      cls := "space-y-1 min-h-32 max-h-32 p-0.5",
+      cls := "space-y-1 shrink-0 p-0.5",
       div(
         cls := "relative", // allow absolute positioning inside
         // progress background
@@ -202,7 +202,7 @@ class MobileUI(
       )
 
     div(
-      cls := "h-16 bg-slate-900/80 ring-1 ring-slate-800 " +
+      cls := "h-16 shrink-0 bg-slate-900/80 ring-1 ring-slate-800 " +
         "backdrop-blur flex items-stretch",
       tabButton(MobileTab.Actions, "Actions", "⚡"),
 //      tabButton(MobileTab.Map, "Map", "🧭"),
