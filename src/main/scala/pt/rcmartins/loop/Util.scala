@@ -550,6 +550,13 @@ object Util {
     )
   }
 
+  def statsSettingsView(gameData: GameData): HtmlElement =
+    detailsTag(
+      cls := "stats-settings",
+      summaryTag("Stats"),
+      statsView(gameData),
+    )
+
   def statsView(gameData: GameData): HtmlElement = {
     import gameData._
     def stat(label: String, value: Signal[String]): HtmlElement =

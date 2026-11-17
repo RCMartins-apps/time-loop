@@ -40,7 +40,6 @@ class MobileUI(
             case MobileTab.Skills    => skillsView()
             case MobileTab.Story     => storyView()
             case MobileTab.Settings  => settingsView()
-            case MobileTab.Stats => div(cls := "stats-page", h2("Stats"), Util.statsView(gameData))
           }
       ),
       bottomTabs(tabVar)
@@ -126,6 +125,7 @@ class MobileUI(
     div(
       cls := "space-y-3",
       Util.installSettingsView(),
+      Util.statsSettingsView(gameData),
       Util.debugView(gameData, saveLoad)
     )
   }
@@ -223,7 +223,6 @@ class MobileUI(
       child.maybe <-- showSkillsUI.map(show =>
         Option.when(show)(tabButton(MobileTab.Skills, "Skills", "📈"))
       ),
-      tabButton(MobileTab.Stats, "Stats", "📊"),
       tabButton(MobileTab.Settings, "Settings", "⚙️"),
     )
   }
@@ -240,7 +239,6 @@ object MobileUI {
     case object Inventory extends MobileTab
     case object Skills extends MobileTab
     case object Story extends MobileTab
-    case object Stats extends MobileTab
     case object Settings extends MobileTab
   }
 

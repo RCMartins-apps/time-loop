@@ -78,6 +78,8 @@
 .stats-row__label { color: #a8b8cc; }
 .stats-row strong { color: #f1f5f9; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .stats-hint { font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 4px 0 8px; }
-.stats-page { padding: 4px; }
-.stats-page h2 { margin-bottom: 12px; font-size: 18px; font-weight: 600; }
-.mobile-tabs > button { min-width: 0; flex: 1 1 0; font-size: 10px; }
+.mobile-tabs > button { min-width: 0; flex: 1 1 0; }
+
+.stats-settings { margin-top: 12px; border-top: 1px solid #334155; padding-top: 12px; }
+.stats-settings > summary { cursor: pointer; font-size: 13px; color: #cbd5e1; padding: 6px 0; }
+.stats-settings > summary:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 2px; }

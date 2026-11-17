@@ -222,11 +222,7 @@ class UI(
           )
         }
       ),
-      panelCard(
-        span("Stats"),
-        statsView(gameData)
-      ),
-      panelCard(span("Settings"), installSettingsView()),
+      panelCard(span("Settings"), installSettingsView(), statsSettingsView(gameData)),
       if (DEBUG_MODE)
         panelCard(
           span("Debug Actions"),
