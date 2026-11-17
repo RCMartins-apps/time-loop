@@ -104,7 +104,7 @@ class MobileUI(
         storyActionsHistory.split(_.id) { case (_, StoryLineHistory(_, line), _) =>
           p(
             cls("animate-fade-in"),
-            span(line),
+            span(Util.itemText(line)),
           )
         },
       onMountCallback { ctx =>

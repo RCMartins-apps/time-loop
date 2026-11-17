@@ -13,6 +13,22 @@ import scala.annotation.tailrec
 
 object Util {
 
+  def itemText(text: String): Seq[HtmlElement] =
+    ItemText.parts(text).map {
+      case ItemText.Part(label, Some(item)) =>
+        span(
+          cls := "item-reference",
+          title := item.name,
+          span(
+            cls := "item-reference__icon",
+            aria.hidden := true,
+            Constants.Icons.CreateIconElement(Val(item.iconPath), Val(item.iconColor)),
+          ),
+          span(label),
+        )
+      case ItemText.Part(label, None) => span(label)
+    }
+
   def activeActionCard(vm: Signal[ActiveActionData], skills: Signal[SkillsState]): HtmlElement =
     currentActionCard(vm.map(Some(_)), skills)
 
@@ -38,7 +54,10 @@ object Util {
         div(
           cls := "action-card__copy",
           span(cls := "action-eyebrow", "In progress"),
-          h3(cls := "action-card__title", child.text <-- action.map(_.data.title)),
+          h3(
+            cls := "action-card__title",
+            children <-- action.map(_.data.title).distinct.map(itemText)
+          ),
         ),
       ),
       div(
@@ -112,7 +131,7 @@ object Util {
             val count = stats.getLoopCount(data.actionDataType.id)
             div(
               p(s"${count}/${nextTarget(base, count)} completions"),
-              bonus.description.split("\n").toSeq.map(p(_)),
+              bonus.description.split("\n").toSeq.map(line => p(itemText(line))),
             )
         }
       }
@@ -142,10 +161,13 @@ object Util {
           div(
             cls := "action-card__copy",
             span(cls := "action-eyebrow", child.text <-- actionSignal.map(_.data.kind.name)),
-            h3(cls := "action-card__title", child.text <-- actionSignal.map(_.data.title)),
+            h3(
+              cls := "action-card__title",
+              children <-- actionSignal.map(_.data.title).distinct.map(itemText)
+            ),
             p(
               cls := "action-card__effect",
-              child.text <-- actionSignal.map(_.data.effectLabel.label)
+              children <-- actionSignal.map(_.data.effectLabel.label).distinct.map(itemText)
             ),
           ),
         ),
@@ -176,7 +198,7 @@ object Util {
       repeatControls(actionSignal, selectedLimit, isDisabled),
       child.maybe <-- isDisabled.map(blocked =>
         Option.when(blocked)(
-          p(cls := "action-card__blocked", child.text <-- reason)
+          p(cls := "action-card__blocked", children <-- reason.map(itemText))
         )
       ),
       child.maybe <-- bonuses.map(items =>

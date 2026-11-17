@@ -81,6 +81,8 @@ object ItemType {
   val MagicLavender: ItemType = addNewItem(new ItemType {
     val id: Int = 6
     val name: String = "Magic Lavender"
+    override val iconPath: String = Constants.Icons.Olive
+    override val iconColor: String = "text-purple-300"
     val inventoryOrder: Int = 6
     val foodValueLong: Long = 0L
   })
@@ -145,6 +147,8 @@ object ItemType {
     val inventoryOrder: Int = 34
     val foodValueLong: Long = 12L
   })
+
+  def all: Seq[ItemType] = allMutable.values.toSeq.sortBy(_.id)
 
   private def addNewItem(itemType: ItemType): ItemType = {
     if (allMutable.contains(itemType.id))
