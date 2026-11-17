@@ -52,10 +52,13 @@
   "></div>
 <div id="main-div"></div>
 
-<button id="install-game" class="install-button" type="button" hidden>Install game</button>
+<div id="install-shortcut" class="install-shortcut" hidden>
+  <button id="install-game" type="button">Install game</button>
+  <button id="hide-install-shortcut" type="button" aria-label="Hide install shortcut" title="You can install later in Settings">Hide</button>
+</div>
 <dialog id="install-help" class="install-help" aria-labelledby="install-help-title">
   <h2 id="install-help-title">Install Time Loop</h2>
-  <p>Open this game in Safari, tap Share, then choose Add to Home Screen and tap Add.</p>
+  <p id="install-help-text"></p>
   <button id="close-install-help" type="button">Got it</button>
 </dialog>
 <script src="public/install.js"></script>
