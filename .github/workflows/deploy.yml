@@ -10,6 +10,10 @@ permissions:
 
 jobs:
   build-and-deploy:
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: github-pages-publish
+      cancel-in-progress: false
     runs-on: ubuntu-latest
 
     steps:
@@ -29,9 +33,11 @@ jobs:
           mkdir -p ./publish-folder/public/js
           cp ./index.html ./publish-folder/
           cp -r ./public/* ./publish-folder/public/
+          touch ./publish-folder/.nojekyll
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./publish-folder
+          branch: gh-pages
+          folder: publish-folder
+          clean-exclude: pr-preview/

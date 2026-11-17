@@ -11,7 +11,7 @@ import scala.util.chaining.scalaUtilChainingOps
 
 class SaveLoadImpl extends SaveLoad {
 
-  private val SaveGameName = "save"
+  private val SaveGameName = SaveLoadImpl.saveKey(org.scalajs.dom.window.location.pathname)
 
   def saveToLocalStorage(gameState: GameState): Either[Throwable, Unit] =
     Try {
@@ -59,5 +59,12 @@ class SaveLoadImpl extends SaveLoad {
 
   private def base64ToJson(str: String): String =
     new String(java.util.Base64.getDecoder.decode(str.getBytes))
+
+}
+
+object SaveLoadImpl {
+  private[loop] def saveKey(pathname: String): String =
+    if (pathname.contains("/pr-preview/pr-")) s"save:$pathname"
+    else "save"
 
 }
