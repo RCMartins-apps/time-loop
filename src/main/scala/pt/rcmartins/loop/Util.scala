@@ -158,12 +158,15 @@ object Util {
         div(
           cls := "action-card__heading",
           div(
-            cls := "action-card__icon",
-            Constants.Icons.CreateIconElement(actionSignal.map(_.data.kind.icon), Val(""))
+            cls := "action-card__identity",
+            div(
+              cls := "action-card__icon",
+              Constants.Icons.CreateIconElement(actionSignal.map(_.data.kind.icon), Val(""))
+            ),
+            span(cls := "action-card__type", child.text <-- actionSignal.map(_.data.kind.name)),
           ),
           div(
             cls := "action-card__copy",
-            span(cls := "action-eyebrow", child.text <-- actionSignal.map(_.data.kind.name)),
             h3(
               cls := "action-card__title",
               children <-- actionSignal.map(_.data.title).distinct.map(itemText)

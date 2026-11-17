@@ -83,3 +83,7 @@
 .stats-settings { margin-top: 12px; border-top: 1px solid #334155; padding-top: 12px; }
 .stats-settings > summary { cursor: pointer; font-size: 13px; color: #cbd5e1; padding: 6px 0; }
 .stats-settings > summary:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 2px; }
+
+.action-card__identity { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 48px; flex: 0 0 48px; }
+.action-card__type { color: #94a3b8; font-size: 9px; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+.action-card__identity .action-card__icon { width: 32px; height: 32px; flex-basis: 32px; padding: 4px; }
