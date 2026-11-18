@@ -13,590 +13,244 @@ import scala.annotation.tailrec
 
 object Util {
 
-  private val baseCardClasses: String =
-    "rounded-2xl p-4 pb-5 bg-slate-800/60 ring-1 ring-slate-700 shadow transition "
+  def itemText(text: String): Seq[HtmlElement] =
+    renderItemParts(ItemText.parts(text))
 
-  private val baseCardHoverClasses: String =
-    "hover:ring-emerald-400/60 hover:shadow-md focus:outline-none " +
-      "focus:ring-2 focus:ring-emerald-400"
-
-  private val mobileBaseCardClasses: String =
-    "rounded-2xl p-1 pb-5 bg-slate-800/60 ring-1 ring-slate-700 shadow transition "
-
-  def activeActionCard(
-      vm: Signal[ActiveActionData],
-      skills: Signal[SkillsState],
-  ): HtmlElement = {
-    val data: Signal[ActionData] = vm.distinctBy(_.id).map(_.data)
-    val longSoFar: Signal[Long] = ActiveActionData.longSoFar(vm).distinct
-    val microLeft: Signal[Long] = ActiveActionData.microLeft(vm).distinct
-    val progressRatio: Signal[Double] = ActiveActionData.progressRatio(vm).distinct
-    val numberOfActionsLeftSignal: Signal[AmountOfActions] = vm.map(_.amountOfActionsLeft)
-
-    div(
-      cls := baseCardClasses,
-      cls := "shadow-lg",
-      tabIndex := 0,
-
-      // Content
-      div(
-        cls := "relative inline-block",
-        cls := "flex items-center gap-3",
-        // Icon + kind accent
-        div(
-          cls := "w-8 h-8 inline-block mr-1 align-middle",
-          Constants.Icons.CreateIconElement(data.map(_.kind.icon), Val("")),
-        ),
-
-        // Title + subtitle + badges
-        div(
-          cls := "min-w-0 flex-1",
-          div(
-            cls := "flex items-start justify-between gap-3",
-            div(
-              h3(
-                cls := "text-base font-semibold tracking-tight",
-                child.text <-- vm.map(_.data.title)
-              ),
-              p(cls := "text-xs text-slate-300/90", child.text <-- vm.map(_.data.effectLabel.label))
-            ),
+  private def renderItemParts(parts: Seq[ItemText.Part]): Seq[HtmlElement] =
+    parts.map {
+      case ItemText.Part(label, Some(item)) =>
+        span(
+          cls := "item-reference",
+          title := item.name,
+          span(
+            cls := "item-reference__icon",
+            aria.hidden := true,
+            Constants.Icons.CreateIconElement(Val(item.iconPath), Val(item.iconColor)),
           ),
+          span(label),
+        )
+      case ItemText.Part(label, None) => span(label)
+    }
 
-          // Badges row
-          div(
-            cls := "mt-2 flex flex-wrap items-center gap-2",
-            span(
-              cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-              child.text <-- longSoFar.combineWith(vm.map(_.targetTimeSec)).map {
-                case (timeSoFar, targetTimeSec) =>
-                  s"\u00A0$timeSoFar\u00A0 / \u00A0$targetTimeSec\u00A0"
-              },
-            ),
-            span(
-              cls := "px-2 py-0.5 text-xs rounded-full bg-slate-900/70 ring-1 ring-slate-600",
-              child.text <-- microLeft.combineWith(data, skills).map {
-                case (timeSoFar, data, skills) =>
-                  val currentTime: Double =
-                    calcWithSkillDouble(timeSoFar, skills.get(data.kind)) / 1_000_000L
-                  f"$currentTime%.1f s"
-              },
-            ),
-            child.maybe <--
-              data.map(_.actionSuccessType).distinct.map {
-                case ActionSuccessType.WithFailure(baseChance, increase) =>
-                  Some(
-                    div(
-                      cls := "relative group",
-                      span(
-                        cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-                        "\u00A0",
-                        child.text <--
-                          vm.map(_.currentActionSuccessChance).map { currentActionSuccessChance =>
-                            f"${(currentActionSuccessChance * 100).toInt}%02d%%"
-                          },
-                        "\u00A0",
-                      ),
-                      div(
-                        cls := "absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 z-20 " +
-                          "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-                          "opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none",
-                        f"This action has a base ${(baseChance * 100).toInt}%d%% of success + ${(increase * 100).toInt}%d%% for every failure"
-                      )
-                    )
-                  )
-                case _ =>
-                  None
-              }
-          ),
-          div(
-            cls := "mt-3 mb-1",
-            div(
-              cls := "h-1.5 rounded-full bg-slate-700/60 overflow-hidden",
-              div(
-                // origin-left ensures scaleX grows from the left edge
-                cls := "h-1.5 rounded-full bg-emerald-500 origin-left will-change-transform",
-
-                // reactive transform: scaleX(progressRatio)
-                transform <-- progressRatio.map { ratio =>
-                  val clamped = ratio.max(0.0).min(1.0)
-                  s"scaleX($clamped)"
-                }
-              )
-            )
-          ),
-        ),
-        amountOfActionsTooltip(numberOfActionsLeftSignal),
-      )
-    )
-  }
-
-  private def calcWithSkillDouble(baseTime: Long, state: SkillState): Double =
-    baseTime.toDouble / state.finalSpeedMulti
+  def activeActionCard(vm: Signal[ActiveActionData], skills: Signal[SkillsState]): HtmlElement =
+    currentActionCard(vm.map(Some(_)), skills)
 
   def mobileCurrentAction(
       vm: Signal[Option[ActiveActionData]],
-      skills: Signal[SkillsState],
+      skills: Signal[SkillsState]
+  ): ReactiveHtmlElement[HTMLDivElement] =
+    currentActionCard(vm, skills)
+
+  private def currentActionCard(
+      vm: Signal[Option[ActiveActionData]],
+      skills: Signal[SkillsState]
   ): ReactiveHtmlElement[HTMLDivElement] = {
-//    val numberOfActionsLeftSignal: Signal[AmountOfActions] = vm.map(_.amountOfActionsLeft)
-
-    val actionActive: Signal[Boolean] = vm.map(_.nonEmpty).distinct
-    val title: Signal[String] = vm.map(_.map(_.data.title).getOrElse("")).distinct
-    val data: Signal[ActionData] =
-      vm.map(_.map(_.data).getOrElse(StoryActions.Data.WakeUp)).distinct
-    val progressRatio: Signal[Double] =
-      vm.map(_.map(_.progressRatio).getOrElse(0.0)).distinct
-    val longSoFar: Signal[Long] =
-      vm.map(_.map(a => a.microSoFar / 1_000_000L).getOrElse(0L)).distinct
-    val targetTimeSec: Signal[Long] =
-      vm.map(_.map(_.targetTimeSec).getOrElse(0L)).distinct
-    val microLeft: Signal[Long] =
-      vm.map(_.map(a => a.targetTimeMicro - a.microSoFar).getOrElse(0L)).distinct
-    val amountOfActionsSignal: Signal[AmountOfActions] =
-      vm.map(_.map(_.amountOfActionsLeft).getOrElse(AmountOfActions.Standard(0))).distinct
-    val limitOfActionsSignal: Signal[Option[Int]] =
-      vm.map(_.flatMap(_.limitOfActions)).distinct
-    val currentActionSuccessChanceSignal: Signal[Double] =
-      vm.map(_.map(_.currentActionSuccessChance).getOrElse(0.0)).distinct
-
+    val action = vm.map(_.getOrElse(StoryActions.Data.WakeUp.toActiveAction))
     div(
-      cls := "min-h-32 max-h-32 w-full",
+      cls := "current-action",
       div(
-        cls("opacity-100") <-- actionActive,
+        cls := "current-action__heading",
         div(
-          cls := "flex items-center gap-1 ",
-          div(
-            cls := "w-7 h-7 inline-block mr-1 align-middle",
-            Constants.Icons.CreateIconElement(data.map(_.kind.icon), Val("")),
-          ),
+          cls := "action-card__icon",
+          Constants.Icons.CreateIconElement(action.map(_.data.kind.icon), Val(""))
+        ),
+        div(
+          cls := "action-card__copy",
+          span(cls := "action-eyebrow", "In progress"),
           h3(
-            cls := "text-base font-semibold tracking-tight",
-            child.text <-- title,
+            cls := "action-card__title",
+            children <-- action.map(_.data.title).distinct.map(itemText)
           ),
-          child.maybe <--
-            data.map(_.actionSuccessType).distinct.map {
-              case ActionSuccessType.WithFailure(baseChance, increase) =>
-                Some(
-                  div(
-                    cls := "relative group ml-2",
-                    span(
-                      cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-                      "\u00A0",
-                      child.text <--
-                        currentActionSuccessChanceSignal.map { currentActionSuccessChance =>
-                          f"${(currentActionSuccessChance * 100).toInt}%02d%%"
-                        },
-                      "\u00A0",
-                    ),
-                    div(
-                      cls := "absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 z-20 " +
-                        "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-                        "opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none",
-                      f"This action has a base ${(baseChance * 100).toInt}%d%% of success + ${(increase * 100).toInt}%d%% for every failure"
-                    )
-                  )
-                )
-              case _ =>
-                None
+        ),
+      ),
+      div(
+        cls := "current-action__stats",
+        span(
+          child.text <-- action.map(a => s"${a.microSoFar / 1_000_000L} / ${a.targetTimeSec} s")
+        ),
+        span(child.text <-- action.combineWith(skills).map { case (a, skills) =>
+          val remaining = (a.targetTimeMicro - a.microSoFar)
+            .max(0L)
+            .toDouble / skills.get(a.data.kind).finalSpeedMulti / 1_000_000L
+          f"$remaining%.1f s left"
+        }),
+        span(child.text <-- action.map { a =>
+          val remaining = a.limitOfActions.fold(a.amountOfActionsLeft) { limit =>
+            a.amountOfActionsLeft match {
+              case AmountOfActions.Standard(n) => AmountOfActions.Standard(n.min(limit))
+              case AmountOfActions.Unlimited   => AmountOfActions.Standard(limit)
             }
-        ),
+          }
+          remaining match {
+            case AmountOfActions.Standard(n) => s"$n remaining"
+            case AmountOfActions.Unlimited   => "Repeating"
+          }
+        }),
+      ),
+      div(
+        cls := "action-progress",
         div(
-          cls := "mt-1 mb-1 relative",
-          div(
-            cls := "h-5 rounded-full bg-slate-700/60 overflow-hidden",
-            div(
-              // origin-left ensures scaleX grows from the left edge
-              cls := "h-5 rounded-full bg-emerald-500 origin-left will-change-transform",
-
-              // reactive transform: scaleX(progressRatio)
-              transform <-- progressRatio.map { ratio =>
-                val clamped = ratio.max(0.0).min(1.0)
-                s"scaleX($clamped)"
-              }
-            )
-          ),
-          // centered label
-          div(
-            cls := "absolute inset-0 flex items-center justify-center font-semibold text-slate-100",
-            span(
-//              cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-              cls := "px-2 py-0.5 text-xs",
-              child.text <-- longSoFar.combineWith(targetTimeSec).map {
-                case (timeSoFar, targetTimeSec) =>
-                  s"\u00A0$timeSoFar\u00A0 / \u00A0$targetTimeSec\u00A0"
-              },
-            ),
-            span(
-              cls := "px-4 py-0.5 text-xs rounded-full bg-slate-900/70 ring-1 ring-slate-600",
-              child.text <-- microLeft.combineWith(data, skills).map {
-                case (timeSoFar, data, skills) =>
-                  val currentTime: Double =
-                    calcWithSkillDouble(timeSoFar, skills.get(data.kind)) / 1_000_000L
-                  f"$currentTime%.1f s"
-              },
-            ),
-          ),
-          amountOfActionsMobileTooltip(amountOfActionsSignal, limitOfActionsSignal)
+          cls := "action-progress__fill",
+          transform <-- action.map(a => s"scaleX(${a.progressRatio.max(0.0).min(1.0)})")
         ),
-      )
+      ),
+      child.maybe <-- action.map { a =>
+        Option.when(a.data.actionSuccessType != ActionSuccessType.Always)(
+          span(
+            cls := "action-card__meta",
+            f"${a.currentActionSuccessChance * 100}%.0f%% success chance"
+          )
+        )
+      }.distinct,
     )
-
-//    div(
-//      cls := baseCardClasses,
-//      cls := "shadow-lg",
-//      tabIndex := 0,
-//
-//      // Content
-//      div(
-//        cls := "relative inline-block",
-//        cls := "flex items-start gap-3",
-//        // Icon + kind accent
-////        div(
-////          cls := "mt-0.5 shrink-0 rounded-xl bg-slate-700/60 ring-1 ring-slate-600 p-2",
-////          child <-- Constants.Icons.CreateIconElement(data.map(_.kind), Val(""))
-////        ),
-//
-//        // Title + subtitle + badges
-//        div(
-//          cls := "min-w-0 flex-1",
-//          div(
-//            cls := "flex items-start justify-between gap-3",
-//            div(
-//              h3(
-//                cls := "text-base font-semibold tracking-tight",
-//                child.text <-- vm.map(_.data.title)
-//              ),
-//              p(cls := "text-xs text-slate-300/90", child.text <-- vm.map(_.data.effectLabel.label))
-//            ),
-//          ),
-//
-//          // Badges row
-//          div(
-//            cls := "mt-2 flex flex-wrap items-center gap-2",
-//            span(
-//              cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-//              child.text <-- longSoFar.combineWith(vm.map(_.targetTimeSec)).map {
-//                case (timeSoFar, targetTimeSec) =>
-//                  s"\u00A0$timeSoFar\u00A0 / \u00A0$targetTimeSec\u00A0"
-//              },
-//            ),
-//            span(
-//              cls := "px-2 py-0.5 text-xs rounded-full bg-slate-900/70 ring-1 ring-slate-600",
-//              child.text <-- microLeft.combineWith(data, skills).map {
-//                case (timeSoFar, data, skills) =>
-//                  val currentTime: Double =
-//                    calcWithSkillDouble(timeSoFar, skills.get(data.kind)) / 1_000_000L
-//                  f"$currentTime%.1f s"
-//              },
-//            ),
-//            child.maybe <--
-//              data.map(_.actionSuccessType).distinct.map {
-//                case ActionSuccessType.WithFailure(baseChance, increase) =>
-//                  Some(
-//                    div(
-//                      cls := "relative group",
-//                      span(
-//                        cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-//                        "\u00A0",
-//                        child.text <--
-//                          vm.map(_.currentActionSuccessChance).map { currentActionSuccessChance =>
-//                            f"${(currentActionSuccessChance * 100).toInt}%02d%%"
-//                          },
-//                        "\u00A0",
-//                      ),
-//                      div(
-//                        cls := "absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 z-20 " +
-//                          "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-//                          "opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none",
-//                        f"This action has a base ${(baseChance * 100).toInt}%d%% of success + ${(increase * 100).toInt}%d%% for every failure"
-//                      )
-//                    )
-//                  )
-//                case _ =>
-//                  None
-//              }
-//          ),
-//          div(
-//            cls := "mt-3 mb-1",
-//            div(
-//              cls := "h-1.5 rounded-full bg-slate-700/60 overflow-hidden",
-//              div(
-//                // origin-left ensures scaleX grows from the left edge
-//                cls := "h-1.5 rounded-full bg-emerald-500 origin-left will-change-transform",
-//
-//                // reactive transform: scaleX(progressRatio)
-//                transform <-- progressRatio.map { ratio =>
-//                  val clamped = ratio.max(0.0).min(1.0)
-//                  s"scaleX($clamped)"
-//                }
-//              )
-//            )
-//          ),
-//        ),
-//        amountOfActionsTooltip(numberOfActionsLeftSignal),
-//      )
-//    )
   }
 
-  def actionCard(
-      actionSignal: Signal[ActiveActionData],
-      gameData: GameData,
-  ): HtmlElement = {
-    val data: Signal[ActionData] = actionSignal.map(_.data).distinct
-    val selectedLimit: Var[Int] = Var(-1)
-
-    val selectedCls =
-      " ring-2 ring-emerald-500 shadow-lg"
-
-    val disabledCls =
-      " opacity-50 grayscale pointer-events-none"
-
-    val isDisabled: Signal[Boolean] =
-      data.combineWith(gameData.gameState).map { case (actionData, gameState) =>
-        ActiveActionData.isInvalid(gameState, actionData)
+  def actionCard(actionSignal: Signal[ActiveActionData], gameData: GameData): HtmlElement = {
+    val selectedLimit = Var(-1)
+    val isDisabled = actionSignal
+      .combineWith(gameData.gameState)
+      .map { case (a, state) => a.isInvalid(state) }
+      .distinct
+    val isQueued = gameData.selectedNextAction
+      .combineWith(actionSignal.map(_.id))
+      .map { case (selected, id) =>
+        selected.exists(_._1 == id)
       }
-
-    val invalidTooltipText: Signal[String] =
-      data
-        .map(_.invalidReason)
-        .combineWith(gameData.gameState)
-        .map { case (invalidReasonF, gameState) =>
-          invalidReasonF(gameState).map(_.label).getOrElse("Different Area")
-        }
-        .distinct
-
-    val numberOfActionsLeftSignal: Signal[AmountOfActions] =
-      actionSignal.map(_.amountOfActionsLeft)
-
-    val bonusIcon: Signal[Seq[(HtmlElement, String)]] = {
-      @tailrec
-      def calcNextMultBonus(completitions: Int, baseValue: Int, multiplier: Int): Int =
-        if (completitions >= baseValue)
-          calcNextMultBonus(completitions, baseValue * multiplier, multiplier)
-        else
-          baseValue
-
-      data.combineWith(gameData.stats).map { case (data, stats) =>
+      .distinct
+    val reason = actionSignal
+      .combineWith(gameData.gameState)
+      .map { case (a, state) =>
+        a.data.invalidReason(state).map(_.label).getOrElse("Travel to this area first.")
+      }
+      .distinct
+    val bonuses =
+      actionSignal.map(_.data).distinct.combineWith(gameData.stats).map { case (data, stats) =>
         data.permanentBonusUnlocks.map {
-          case PermanentBonusUnlockType.ProgressiveActionCount(bonus, baseValue, multiplier) =>
+          case PermanentBonusUnlockType.ProgressiveActionCount(bonus, base, multiplier) =>
+            @tailrec def nextTarget(target: Int, count: Int): Int =
+              if (count >= target && multiplier > 1 && target <= Int.MaxValue / multiplier)
+                nextTarget(target * multiplier, count)
+              else target
             val count = stats.getLoopCount(data.actionDataType.id)
-            (
-              span(
-                p(
-                  s"Completing this action $count/${calcNextMultBonus(count, baseValue, multiplier)}x will:"
-                ),
-                bonus.description.split("\n").toSeq.map(p(_))
-              ),
-              permanentBonusToSVGPath(bonus)
+            div(
+              p(s"${count}/${nextTarget(base, count)} completions"),
+              bonus.description.split("\n").toSeq.map(line => p(itemText(line))),
             )
         }
       }
-    }
-
-    div(
-      cls := "relative",
-      cls := "m-2 mt-8 me-3",
-      div(
-        role := "button",
-        tabIndex := 0,
-        cls := baseCardClasses,
-        cls := "relative",
-        cls(selectedCls) <-- gameData.selectedNextAction.combineWith(actionSignal.map(_.id)).map {
-          case (optId, actionId) => optId.map(_._1).contains(actionId)
-        },
-        cls(baseCardHoverClasses) <-- isDisabled.map(!_),
-        onClick.compose(_.withCurrentValueOf(selectedLimit.signal, actionSignal, isDisabled)) --> {
-          case (_, limit, action, false) =>
+    articleTag(
+      cls := "action-card",
+      cls("action-card--blocked") <-- isDisabled,
+      cls("action-card--queued") <-- isQueued,
+      button(
+        tpe := "button",
+        cls := "action-card__main",
+        disabled <-- isDisabled,
+        onClick.compose(_.withCurrentValueOf(selectedLimit.signal, actionSignal)) --> {
+          case (_, limit, action) =>
             gameData.selectNextAction(
               action.id,
               Option
                 .when(action.data.forceMaxAmountOfActionsIs1)(1)
-                .orElse(Some(limit).filter(_ != -1))
+                .orElse(Option.when(limit != -1)(limit))
             )
-          case _ =>
         },
-
-        // Content
         div(
-          cls(disabledCls) <-- isDisabled,
-          cls := "relative inline-block",
-          cls := "flex items-center gap-3",
-          // Icon
+          cls := "action-card__heading",
           div(
-            cls := "w-8 h-8 inline-block mr-1 align-middle",
-            Constants.Icons.CreateIconElement(data.map(_.kind.icon), Val("")),
-          ),
-
-          // Title + subtitle + badges
-          div(
-            cls := "min-w-0 flex-1",
+            cls := "action-card__identity",
             div(
-              cls := "flex items-start justify-between gap-3",
-              div(
-                h3(
-                  cls := "text-base font-semibold tracking-tight",
-                  child.text <-- actionSignal.map(_.data.title),
-                ),
-                p(
-                  cls := "text-xs text-slate-300/90",
-                  child.text <-- actionSignal.map(_.data.effectLabel.label),
+              cls := "action-card__icon",
+              Constants.Icons.CreateIconElement(actionSignal.map(_.data.kind.icon), Val(""))
+            ),
+            span(cls := "action-card__type", child.text <-- actionSignal.map(_.data.kind.name)),
+          ),
+          div(
+            cls := "action-card__copy",
+            h3(
+              cls := "action-card__title",
+              children <-- actionSignal.map(_.data.title).distinct.map(itemText)
+            ),
+            p(
+              cls := "action-card__effect",
+              children <-- actionSignal.map(_.data.effectLabel.parts).distinct.map(renderItemParts)
+            ),
+          ),
+        ),
+        div(
+          cls := "action-card__metadata",
+          span(child.text <-- actionSignal.map(a => s"${a.targetTimeSec} s")),
+          span(child.text <-- actionSignal.map(_.amountOfActionsLeft match {
+            case AmountOfActions.Standard(n) => s"$n available"
+            case AmountOfActions.Unlimited   => "Unlimited"
+          })),
+          child.maybe <-- actionSignal.map { a =>
+            a.data.actionSuccessType match {
+              case ActionSuccessType.WithFailure(base, increase) =>
+                Some(
+                  span(
+                    title := f"${base * 100}%.0f%% base chance, +${increase * 100}%.0f%% per failure",
+                    f"${base * 100}%.0f%% success",
+                  )
                 )
-              ),
-            ),
-
-            // Badges row
-            div(
-              cls := "mt-2 flex flex-wrap items-center gap-2",
-              span(
-                cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-                "\u00A0",
-                child.text <-- actionSignal.map(_.targetTimeSec.toString),
-                "\u00A0",
-              ),
-              child.maybe <--
-                actionSignal.map(_.data.actionSuccessType match {
-                  case ActionSuccessType.WithFailure(baseChance, increase) =>
-                    Some(
-                      div(
-                        cls := "relative group",
-                        span(
-                          cls := "px-2 py-0.5 text-xs rounded-full bg-slate-700/70 ring-1 ring-slate-600",
-                          "\u00A0",
-                          f"${(baseChance * 100).toInt}%02d%%",
-                          "\u00A0",
-                        ),
-                        div(
-                          cls := "absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 z-20 " +
-                            "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-                            "opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none",
-                          f"This action has a base ${(baseChance * 100).toInt}%d%% of success + ${(increase * 100).toInt}%d%% for every failure"
-                        )
-                      )
-                    )
-                  case _ =>
-                    None
-                })
-            ),
+              case _ => None
+            }
+          }.distinct,
+          child.maybe <-- isQueued.map(queued =>
+            Option.when(queued)(span(cls := "action-card__queued", "Queued"))
           ),
-
-          // Invalid reason tooltip (top center)
-          div(
-            cls := "absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 " +
-              "text-xs text-slate-100 bg-slate-700 rounded-md whitespace-nowrap shadow-lg " +
-              "transition-opacity duration-150 opacity-0 pointer-events-none",
-            child.text <-- invalidTooltipText,
-            cls("opacity-100") <-- isDisabled
-          ),
-          amountOfActionsTooltip(numberOfActionsLeftSignal),
-          selectAmountOfActionsOverlay(actionSignal, selectedLimit),
         ),
       ),
-      children <--
-        bonusIcon.map {
-          _.map { case (tooltipDescription, iconPath) =>
-            div(
-              cls := "absolute -top-8 right-2",
-              div(
-                // inline-block so the wrapper is just the icon's size
-                cls := "relative inline-block group",
-                div(
-                  cls := "inline-block bg-blue-500 rounded w-7 h-7",
-                  Constants.Icons.CreateIconElement(Val(iconPath), Val(""))
-                ),
-                // Tooltip
-                div(
-                  cls := "absolute right-0 top-full mt-1 px-2 py-1 z-20 " +
-                    "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-                    "hidden group-hover:block pointer-events-none z-10",
-                  tooltipDescription
-                )
-              )
-            )
-          }
-        }
+      repeatControls(actionSignal, selectedLimit, isDisabled),
+      child.maybe <-- isDisabled.map(blocked =>
+        Option.when(blocked)(
+          p(cls := "action-card__blocked", children <-- reason.map(itemText))
+        )
+      ),
+      child.maybe <-- bonuses.map(items =>
+        Option.when(items.nonEmpty)(
+          detailsTag(cls := "action-card__bonus", summaryTag("Permanent bonus"), items)
+        )
+      ),
     )
   }
 
-  private def amountOfActionsTooltip(amountOfActionsSignal: Signal[AmountOfActions]): HtmlElement =
-    div(
-      cls := "absolute right-0 top-full translate-x-3/4 -translate-y-1/4 mt-2 px-2 py-1 " +
-        "text-xs text-slate-100 bg-slate-700 rounded-md whitespace-nowrap shadow-lg " +
-        "transition-opacity duration-150 opacity-0 pointer-events-none",
-      child.text <-- amountOfActionsSignal.map {
-        case AmountOfActions.Standard(amount) => s"x$amount"
-        case AmountOfActions.Unlimited        => "∞"
-      },
-      cls("opacity-100") <-- amountOfActionsSignal.map(_.moreThanOne)
-    )
-
-  private def amountOfActionsMobileTooltip(
-      amountOfActionsSignal: Signal[AmountOfActions],
-      limitOfActionsSignal: Signal[Option[Int]],
-  ): HtmlElement =
-    div(
-      cls := "absolute inset-0 flex items-center justify-end font-semibold text-slate-100 px-2",
-      child.text <-- amountOfActionsSignal.combineWith(limitOfActionsSignal).map {
-        case (AmountOfActions.Standard(amount), None)        => s"x$amount"
-        case (AmountOfActions.Standard(amount), Some(limit)) => s"x $limit/$amount"
-        case (AmountOfActions.Unlimited, None)               => "∞"
-        case (AmountOfActions.Unlimited, Some(limit))        => s"x $limit/∞"
-      },
-    )
-
-  private def selectAmountOfActionsOverlay(
+  private def repeatControls(
       actionSignal: Signal[ActiveActionData],
       selectedLimit: Var[Int],
-  ): ReactiveHtmlElement[HTMLDivElement] = {
-    val allowed = actionSignal.map(action =>
-      action.amountOfActionsLeft match {
-        case _
-            if action.data.moveToArea.nonEmpty ||
-              action.data.initialAmountOfActions.singleAction ||
-              action.data.forceMaxAmountOfActionsIs1 =>
-          Nil
-        case AmountOfActions.Unlimited =>
-          List(1, 5, 10, -1)
-        case AmountOfActions.Standard(1) =>
-          List(1)
-        case AmountOfActions.Standard(amount) if amount < 5 =>
-          List(1, 2, 3, -1).filter(_ <= amount)
-        case AmountOfActions.Standard(amount) if amount < 10 =>
-          List(1, 2, 5, -1).filter(_ <= amount)
-        case AmountOfActions.Standard(amount) =>
-          List(1, 5, 10, -1).filter(_ <= amount)
-      }
-    )
-    val hideDiv = actionSignal.map(action =>
-      action.data.moveToArea.nonEmpty || !action.amountOfActionsLeft.moreThanOne
-    )
+      isDisabled: Signal[Boolean]
+  ): HtmlElement = {
+    val options = actionSignal.map { a =>
+      if (
+        a.data.moveToArea.nonEmpty || a.data.forceMaxAmountOfActionsIs1 || !a.amountOfActionsLeft.moreThanOne
+      ) Nil
+      else
+        a.amountOfActionsLeft match {
+          case AmountOfActions.Unlimited   => List(1, 5, 10, -1)
+          case AmountOfActions.Standard(n) =>
+            (if (n < 5) List(1, 2, 3) else if (n < 10) List(1, 2, 5) else List(1, 5, 10)).filter(
+              _ <= n
+            ) :+ -1
+        }
+    }.distinct
     div(
-      cls := "absolute top-2 right-2",
+      cls := "action-card__repeat",
+      cls("action-card__repeat--empty") <-- options.map(_.isEmpty),
+      span(cls := "action-card__repeat-label", "Repeat"),
       div(
-        cls := "flex items-center gap-1",
-        children <-- allowed.map(_.map { amount =>
-          val label =
-            if (amount == -1) "Max"
-            else s"x$amount"
-
+        cls := "action-card__repeat-options",
+        children <-- options.map(_.map { amount =>
           button(
-            cls := "px-2 py-0.5 text-[10px] rounded-md " +
-              "ring-1 " +
-              "hover:bg-slate-600/60 transition cursor-pointer " +
-              "select-none text-base",
-
-            // highlight if selected
-            cls("ring-emerald-400 bg-emerald-600/60 text-white") <--
-              selectedLimit.signal.map(_ == amount),
-            cls("ring-slate-600 bg-slate-700/60") <--
-              selectedLimit.signal.map(_ != amount),
-            label,
-            onClick --> { e =>
-              e.stopPropagation()
-              selectedLimit.set(amount)
-            }
+            tpe := "button",
+            cls := "action-repeat-button",
+            cls("is-selected") <-- selectedLimit.signal.map(_ == amount),
+            aria.pressed <-- selectedLimit.signal.map(n => (n == amount).toString),
+            disabled <-- isDisabled,
+            if (amount == -1) "Max" else s"×$amount",
+            onClick --> (_ => selectedLimit.set(amount)),
           )
         }),
-        cls("opacity-100") <-- hideDiv
-      )
+      ),
     )
   }
 
@@ -899,6 +553,33 @@ object Util {
     )
   }
 
+  def statsSettingsView(gameData: GameData): HtmlElement =
+    detailsTag(
+      cls := "stats-settings",
+      summaryTag("Stats"),
+      statsView(gameData),
+    )
+
+  def statsView(gameData: GameData): HtmlElement = {
+    import gameData._
+    def stat(label: String, value: Signal[String]): HtmlElement =
+      div(cls := "stats-row", span(cls := "stats-row__label", label), strong(child.text <-- value))
+    div(
+      cls := "stats-view",
+      stat("Total elapsed time", globalTimeElapsedLong.map(secondsToPrettyStr)),
+      p(cls := "stats-hint", "Game time progressed across all loops."),
+      stat("This loop", timeElapsedLong.map(secondsToPrettyStr)),
+      stat("Saved time", extraTimeLong.map(secondsToPrettyStr)),
+      stat("Loop", loopNumber.map(_.toString)),
+      stat("Actions completed", stats.map(_.globalActionCount.values.map(_.toLong).sum.toString)),
+      stat(
+        "Energy",
+        energyLong.combineWith(maxEnergyInt).map { case (energy, maximum) => s"$energy / $maximum" }
+      ),
+      stat("Tiredness", currentTiredSecond.map(value => f"$value%.2f / sec")),
+    )
+  }
+
   def installSettingsView(): HtmlElement =
     div(
       cls := "space-y-2",
@@ -1079,11 +760,6 @@ object Util {
       )
     )
   }
-
-  private def permanentBonusToSVGPath(permanentBonus: PermanentBonus): String =
-    permanentBonus match {
-      case PermanentBonus.HalfTiredness => Constants.Icons.Strong
-    }
 
   def toastContainer(gameData: GameData): ReactiveHtmlElement[HTMLDivElement] =
     div(

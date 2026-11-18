@@ -55,7 +55,7 @@ class MobileUI(
       div(
         cls := "flex-1 min-h-0 overflow-y-auto",
         div(
-          cls := "grid gap-1 sm:grid-cols-2 p-2",
+          cls := "action-grid",
           children <-- nextActions.split(_.id) { case (_, _, action) =>
             actionCard(action, gameData)
           }
@@ -104,7 +104,7 @@ class MobileUI(
         storyActionsHistory.split(_.id) { case (_, StoryLineHistory(_, line), _) =>
           p(
             cls("animate-fade-in"),
-            span(line),
+            span(Util.itemText(line)),
           )
         },
       onMountCallback { ctx =>
@@ -125,6 +125,7 @@ class MobileUI(
     div(
       cls := "space-y-3",
       Util.installSettingsView(),
+      Util.statsSettingsView(gameData),
       Util.debugView(gameData, saveLoad)
     )
   }
@@ -168,16 +169,6 @@ class MobileUI(
         span(
           child.text <-- timeElapsedLong.map(secondsToPrettyStr)
         ),
-
-        // Global elapsed time tooltip
-        cls := "relative inline-block group",
-        div(
-          cls := "absolute left-0 top-full mt-1 px-2 py-1 z-20 " +
-            "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-            "hidden group-hover:block pointer-events-none z-10",
-          "Total Elapsed Time: ",
-          child.text <-- globalTimeElapsedLong.map(secondsToPrettyStr)
-        )
       ),
       div(
         cls := "flex justify-between px-2",
@@ -219,7 +210,7 @@ class MobileUI(
       )
 
     div(
-      cls := "h-16 shrink-0 bg-slate-900/80 ring-1 ring-slate-800 " +
+      cls := "mobile-tabs h-16 shrink-0 bg-slate-900/80 ring-1 ring-slate-800 " +
         "backdrop-blur flex items-stretch",
       tabButton(MobileTab.Actions, "Actions", "⚡"),
 //      tabButton(MobileTab.Map, "Map", "🧭"),

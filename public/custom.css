@@ -18,3 +18,72 @@
 .install-help::backdrop { background: rgb(0 0 0 / .6); }
 .install-help p { margin: 1rem 0; }
 .install-help button { background: #047857; color: white; padding: .5rem 1rem; border-radius: .5rem; }
+
+/* Action information stays in the document flow, including blocked states. */
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 12px; padding: 2px; align-items: start; }
+.action-card { min-width: 0; border: 1px solid #334155; border-radius: 16px; background: #172335; overflow: hidden; box-shadow: 0 3px 12px #02061726; }
+.action-card--queued { border-color: #34d399; box-shadow: 0 0 0 1px #34d399; }
+.action-card__main { display: block; width: 100%; text-align: left; padding: 16px; color: #f1f5f9; cursor: pointer; }
+.action-card__main:hover:not(:disabled) { background: #1e3045; }
+.action-card__main:focus-visible, .action-repeat-button:focus-visible { outline: 2px solid #6ee7b7; outline-offset: -3px; }
+.action-card__main:disabled { cursor: default; color: #cbd5e1; }
+.action-card__heading, .current-action__heading { display: flex; align-items: flex-start; gap: 12px; }
+.action-card__icon { width: 36px; height: 36px; flex: 0 0 36px; padding: 5px; border-radius: 10px; background: #27364a; color: #a7f3d0; }
+.action-card__icon svg { display: block; width: 100%; height: 100%; }
+.action-card__copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.action-eyebrow { display: block; color: #94a3b8; font-size: 10px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; line-height: 1.5; margin-bottom: 3px; }
+.action-card__title { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.4; }
+.action-card__effect { color: #b8c7da; font-size: 12px; line-height: 1.5; margin-top: 4px; }
+.action-card__effect:empty { display: none; }
+.action-card__metadata, .current-action__stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #b8c7da; margin-top: 12px; line-height: 1.5; }
+.action-card__metadata > span { white-space: nowrap; }
+.action-card__queued { color: #6ee7b7; font-weight: 600; margin-left: auto; }
+.action-card__repeat { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; border-top: 1px solid #334155; }
+.action-card__repeat--empty { display: none; }
+.action-card__repeat-label { font-size: 12px; color: #94a3b8; }
+.action-card__repeat-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.action-repeat-button { min-width: 44px; min-height: 44px; border: 1px solid #475569; border-radius: 8px; color: #cbd5e1; font-size: 12px; font-weight: 600; padding: 6px 10px; cursor: pointer; }
+.action-repeat-button:hover:not(:disabled) { background: #334155; }
+.action-repeat-button.is-selected { background: #065f46; color: #d1fae5; border-color: #34d399; }
+.action-repeat-button:disabled { cursor: default; opacity: .65; }
+.action-card__blocked { margin: 0; padding: 10px 16px; border-top: 1px solid #61482c; background: #382a1d; color: #fcd9a8; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.action-card__bonus { border-top: 1px solid #334155; padding: 10px 16px; font-size: 12px; color: #a5b4fc; line-height: 1.5; }
+.action-card__bonus summary { cursor: pointer; }
+.action-card__bonus p { margin-top: 6px; overflow-wrap: anywhere; }
+.current-action { width: 100%; min-width: 0; padding: 10px 12px; }
+.current-action__heading .action-card__icon { width: 30px; height: 30px; flex-basis: 30px; }
+.current-action__stats { justify-content: space-between; margin-top: 8px; font-size: 11px; }
+.action-progress { height: 6px; margin-top: 8px; background: #334155; border-radius: 99px; overflow: hidden; }
+.action-progress__fill { height: 100%; width: 100%; background: #34d399; transform-origin: left; }
+.action-card__meta { display: block; color: #94a3b8; font-size: 11px; margin-top: 6px; }
+.game-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) 260px; }
+.game-layout > * { min-width: 0; }
+.game-layout.has-skills { grid-template-columns: 220px minmax(0, 1fr) 260px; }
+@media (max-width: 1199px) {
+  .game-layout.has-skills { grid-template-columns: minmax(0, 1fr) 250px; }
+  .game-layout > .skills-column { grid-column: 1 / -1; }
+}
+
+.current-story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 12px; }
+.action-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+.action-section-location { color: #94a3b8; font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+
+.item-reference { display: inline-flex; align-items: baseline; gap: .25em; max-width: 100%; vertical-align: baseline; white-space: nowrap; }
+.item-reference__icon { display: inline-flex; align-self: center; width: 1.1em; height: 1.1em; flex: 0 0 1.1em; }
+.item-reference__icon svg { display: block; width: 100%; height: 100%; }
+
+.stats-view { min-width: 0; }
+.stats-row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid #334155; font-size: 13px; line-height: 1.5; }
+.stats-row:last-child { border-bottom: 0; }
+.stats-row__label { color: #a8b8cc; }
+.stats-row strong { color: #f1f5f9; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stats-hint { font-size: 11px; color: #94a3b8; line-height: 1.5; margin: 4px 0 8px; }
+.mobile-tabs > button { min-width: 0; flex: 1 1 0; }
+
+.stats-settings { margin-top: 12px; border-top: 1px solid #334155; padding-top: 12px; }
+.stats-settings > summary { cursor: pointer; font-size: 13px; color: #cbd5e1; padding: 6px 0; }
+.stats-settings > summary:focus-visible { outline: 2px solid #6ee7b7; outline-offset: 2px; }
+
+.action-card__identity { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 48px; flex: 0 0 48px; }
+.action-card__type { color: #94a3b8; font-size: 9px; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+.action-card__identity .action-card__icon { width: 32px; height: 32px; flex-basis: 32px; padding: 4px; }

@@ -28,15 +28,12 @@ class UI(
       },
       div(
         // mobile: single column; desktop: 3 columns
-        cls := "grid gap-4",
-        styleAttr <-- showSkillsUI.map {
-          case true  => "grid-template-columns: 260px minmax(0, 1fr) 300px"
-          case false => "grid-template-columns: minmax(0, 1fr) 300px"
-        },
+        cls := "game-layout",
+        cls("has-skills") <-- showSkillsUI,
         // Order for mobile stacking
         child.maybe <-- showSkillsUI.map(show =>
           Option.when(show)(
-            div(cls := "order-1 md:order-1", skillsSidebar(skillsView))
+            div(cls := "skills-column order-1 md:order-1", skillsSidebar(skillsView))
           )
         ),
         div(
@@ -61,7 +58,7 @@ class UI(
     panelCard(
       span("Current Action"),
       div(
-        cls := "space-y-3 min-h-32 max-h-32",
+        cls := "space-y-3",
         div(
           cls := "flex items-start gap-3",
           child.maybe <--
@@ -83,7 +80,7 @@ class UI(
 
   private val nextActionsView: ReactiveHtmlElement[HTMLDivElement] =
     div(
-      cls := "grid gap-5 sm:grid-cols-2",
+      cls := "action-grid",
       children <-- nextActions.split(_.id) { case (_, _, action) =>
         actionCard(action, gameData)
       }
@@ -97,67 +94,6 @@ class UI(
         nextMoveActions,
         area => gameData.selectNextMoveAction(area),
       )
-    )
-
-  // Misc info (stats / timers)
-  private val miscView: ReactiveHtmlElement[HTMLDivElement] =
-    div(
-      cls := "space-y-2 text-sm",
-      div(
-        cls := "flex justify-between",
-        span("Time Elapsed"),
-        span(
-          child.text <-- timeElapsedLong.map(secondsToPrettyStr)
-        ),
-
-        // Global elapsed time tooltip
-        cls := "relative inline-block group",
-        div(
-          cls := "absolute left-0 top-full mt-1 px-2 py-1 z-20 " +
-            "text-xs bg-slate-900 text-white rounded shadow-lg whitespace-nowrap " +
-            "hidden group-hover:block pointer-events-none z-10",
-          "Total Elapsed Time: ",
-          child.text <-- globalTimeElapsedLong.map(secondsToPrettyStr)
-        )
-      ),
-      div(
-        cls := "flex justify-between",
-        span("Time Saved"),
-        span(
-          child.text <-- extraTimeLong.map(secondsToPrettyStr)
-        ),
-      ),
-      child.maybe <--
-        loopNumber.map(_ > 1).distinct.map {
-          case false =>
-            None
-          case true =>
-            Some(
-              div(
-                cls := "flex justify-between",
-                span("Loop Count"),
-                span(child.text <-- loopNumber.map(_.toString)),
-              )
-            )
-        },
-      div(
-        cls := "flex justify-between",
-        span("Energy"),
-        span(
-          child.text <-- energyLong.combineWith(maxEnergyInt).map { case (energy, maxEnergy) =>
-            f"$energy%d / $maxEnergy%d"
-          }
-        ),
-      ),
-      div(
-        cls := "flex justify-between",
-        span("Tiredness"),
-        span(
-          child.text <-- currentTiredSecond.map { tiredSecond =>
-            f"$tiredSecond%.2f / sec"
-          }
-        ),
-      ),
     )
 
   /** Reusable section shells */
@@ -181,8 +117,7 @@ class UI(
       // two rows: auto (top) + 1fr (bottom)
       cls := "grid grid-rows-[auto,1fr] gap-4 min-h-[60dvh]",
       div(
-        cls := "grid gap-3",
-        cls("grid-cols-2") <-- showStoryUI,
+        cls := "current-story-grid",
         currentActionView,
         child.maybe <-- showStoryUI.map(show => Option.when(show)(storyDiv)),
       ),
@@ -190,12 +125,10 @@ class UI(
       div(
         cls := "rounded-2xl p-4 bg-slate-800/60 ring-1 ring-slate-700 shadow flex flex-col min-h-0 ",
         h3(
-          cls := "text-sm font-semibold tracking-tight mb-2 relative",
+          cls := "action-section-heading",
           "Area Actions",
           div(
-            cls := "absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 " +
-              "text-xs text-slate-100 bg-slate-700 rounded-md whitespace-nowrap shadow-lg " +
-              "transition-opacity duration-150 opacity-100 pointer-events-none",
+            cls := "action-section-location",
             child.text <--
               characterArea.combineWith(currentActionMovingArea).map {
                 case (characterArea, None) =>
@@ -254,7 +187,7 @@ class UI(
           storyActionsHistory.split(_.id) { case (_, StoryLineHistory(_, line), _) =>
             p(
               cls("animate-fade-in"),
-              span(line),
+              span(Util.itemText(line)),
             )
           },
         onMountCallback { ctx =>
@@ -289,11 +222,7 @@ class UI(
           )
         }
       ),
-      panelCard(
-        span("Notes / Info"),
-        div(cls := "space-y-2 max-h-[30dvh] overflow-auto", miscView)
-      ),
-      panelCard(span("Settings"), installSettingsView()),
+      panelCard(span("Settings"), installSettingsView(), statsSettingsView(gameData)),
       if (DEBUG_MODE)
         panelCard(
           span("Debug Actions"),
