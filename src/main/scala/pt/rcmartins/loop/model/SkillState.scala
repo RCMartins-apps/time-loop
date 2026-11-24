@@ -16,17 +16,16 @@ final case class SkillState(
   def nextLoopXP: Long = LoopNextLevelXpCache(loopLevel)
   def nextLoopXPMicro: Long = nextLoopXP * 1_000_000L
   def loopRatio: Double = Math.min(1.0, loopXPMicro.toDouble / nextLoopXPMicro.toDouble)
-  private def loopMulti: Double = SkillState.LoopMultiCache(loopLevel)
   def loopXPLong: Long = loopXPMicro / 1_000_000L
 
   def nextPermXP: Long = PermanentNextLevelXpCache(permLevel)
   def nextPermXPMicro: Long = nextPermXP * 1_000_000L
   def permRatio: Double = Math.min(1.0, permXPMicro.toDouble / nextPermXPMicro.toDouble)
-  private def permMulti: Double = SkillState.PermanentMultiCache(permLevel)
   def permXPLong: Long = permXPMicro / 1_000_000L
 
   def finalSpeedMulti: Double =
-    loopMulti * permMulti * currentBonusMultiplier
+    (1.0 + loopLevel * LoopSpeedBonusPerLevel + permLevel * PermanentSpeedBonusPerLevel) *
+      currentBonusMultiplier
 
   def resetLoopProgress: SkillState =
     copy(
@@ -51,10 +50,10 @@ object SkillState {
     )
 
   private val NextLevelLoopXpFactor: Double = 1.1
-  private val LoopMultiplier: Double = 1.05
+  private val LoopSpeedBonusPerLevel: Double = 0.10
 
   private val NextLevelPermXpFactor: Double = 1.02
-  private val PermanentMultiplier: Double = 1.01
+  private val PermanentSpeedBonusPerLevel: Double = 0.01
 
   private val LoopNextLevelXpCache: IndexedSeq[Long] =
     exponentialCalcLong(10, NextLevelLoopXpFactor)
@@ -62,28 +61,12 @@ object SkillState {
   private val PermanentNextLevelXpCache: IndexedSeq[Long] =
     exponentialCalcLong(25, NextLevelPermXpFactor)
 
-  private val LoopMultiCache: IndexedSeq[Double] =
-    exponentialCalcDouble(1.0, LoopMultiplier)
-
-  private val PermanentMultiCache: IndexedSeq[Double] =
-    exponentialCalcDouble(1.0, PermanentMultiplier)
-
   private def exponentialCalcLong(base: Long, mult: Double): IndexedSeq[Long] = {
     var cache: IndexedSeq[Long] = Vector(base)
     var last: Double = base.toDouble
     for (_ <- 1 to 1000) {
       last *= mult
       cache = cache :+ Math.ceil(last).toLong
-    }
-    cache
-  }
-
-  private def exponentialCalcDouble(base: Double, mult: Double): IndexedSeq[Double] = {
-    var cache: IndexedSeq[Double] = Vector(base)
-    var last: Double = base
-    for (_ <- 1 to 1000) {
-      last = last * mult
-      cache = cache :+ last
     }
     cache
   }

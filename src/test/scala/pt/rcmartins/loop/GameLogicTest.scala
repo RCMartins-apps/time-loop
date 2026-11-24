@@ -48,6 +48,17 @@ object GameLogicTest extends ZIOSpecDefault {
 
   override def spec: Spec[Scope, Any] =
     suite("GameLogic")(
+      test("loop and permanent skill levels add fixed speed bonuses") {
+        val skill = SkillState.initial(ActionKind.Agility)
+        assertTrue(
+          skill.finalSpeedMulti == 1.0,
+          skill.copy(loopLevel = 1).finalSpeedMulti == 1.1,
+          skill.copy(loopLevel = 10).finalSpeedMulti == 2.0,
+          skill.copy(loopLevel = 34).finalSpeedMulti == 4.4,
+          skill.copy(permLevel = 34).finalSpeedMulti == 1.34,
+          skill.copy(loopLevel = 10, permLevel = 20).finalSpeedMulti == 2.2,
+        )
+      },
       suite("update")(
         test("update action completions after action finish") {
           val res: GameState =
@@ -84,7 +95,7 @@ object GameLogicTest extends ZIOSpecDefault {
             )
           val actualExpectedtimePassed: Long =
             10_000_000 + // time to complete while at level 0
-              Math.floor(5_000_000.0 / 1.05).toLong // time to complete while at level 1
+              Math.floor(5_000_000.0 / 1.10).toLong // time to complete while at level 1
 
           assertTrue(
             res.timeElapsedMicro == actualExpectedtimePassed,
@@ -114,7 +125,7 @@ object GameLogicTest extends ZIOSpecDefault {
                   )
                 )
               ),
-              5_000L,
+              6_000L,
             )
           assertTrue(
             res.currentAction.isEmpty,
