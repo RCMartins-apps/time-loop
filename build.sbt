@@ -30,7 +30,6 @@ val V = new {
   val zioJson = "0.7.45"
   val laminar = "17.2.1"
   val scalajsDom = "2.8.1"
-  val quicklens = "1.9.12"
 }
 
 lazy val frontend =
@@ -48,7 +47,6 @@ lazy val frontend =
       libraryDependencies ++= Seq(
         // Production
         "com.raquo"                  %%% "laminar"   % V.laminar,
-        "com.softwaremill.quicklens" %%% "quicklens" % V.quicklens,
         "dev.zio"                    %%% "zio-json"  % V.zioJson,
         // Test
         "dev.zio" %%% "zio-test"          % V.zio % Test,
