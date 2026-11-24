@@ -1,6 +1,6 @@
 // The deployment workflow replaces this token with the source revision.
 const CACHE_PREFIX = `time-loop:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}658e415bfd0d34a220c1dbd027aa1429789b8dbf`;
+const CACHE_NAME = `${CACHE_PREFIX}ff9a24ceb0869ac68cd5a87e2b9ea9c57dc9dddf`;
 const SHELL_PATHS = [
   './', './index.html', './public/js/time-loop.js', './public/tailwind.3.4.17.js',
   './public/custom.css', './public/install.js', './public/manifest.webmanifest',
