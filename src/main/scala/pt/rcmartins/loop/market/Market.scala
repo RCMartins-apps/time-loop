@@ -81,7 +81,7 @@ object Market {
     11,
     7,
     55,
-    s"The guild advances $GuildAdvance crowns and reserves an extra timber cart each morning."
+    s"Next loop: +$GuildAdvance starting crowns and one extra timber batch."
   )
 
   val Shelter = Order(
@@ -92,7 +92,7 @@ object Market {
     5,
     7,
     75,
-    "Mara lends a bench hand and introduces the bridge crew."
+    "Next loop: unlock crafting automation and bridge orders."
   )
 
   val Crossing = Order(
@@ -103,7 +103,7 @@ object Market {
     8,
     8,
     72,
-    "The crew opens the Highbank route and sends a courier.",
+    "Next loop: unlock automatic delivery and Highbank orders.",
     Some(Shelter.id)
   )
 
@@ -115,14 +115,14 @@ object Market {
     15,
     10,
     90,
-    "Highbank gets everyone across before the river rises.",
+    "Completes the Highbank evacuation.",
     Some(Crossing.id)
   )
 
   val Offers = Vector(
     Offer(
       "timber-cart",
-      "Timber cart",
+      "Timber",
       "Sawmill",
       Vector(Stack(Timber, 3)),
       4,
@@ -130,10 +130,10 @@ object Market {
       2,
       extraBatchAfter = Some(Merchant.id)
     ),
-    Offer("oil-crate", "Oil crate", "Chandler", Vector(Stack(Oil, 3)), 3, 4, 2),
+    Offer("oil-crate", "Lamp oil", "Chandler", Vector(Stack(Oil, 3)), 3, 4, 2),
     Offer(
       "rope-bundle",
-      "Rope bundle",
+      "Rope",
       "Bridge crew",
       Vector(Stack(Rope, 2)),
       4,
@@ -146,14 +146,14 @@ object Market {
   val Recipes = Vector(
     Recipe(
       "make-lantern",
-      "Assemble a lantern",
+      "Lantern",
       Vector(Stack(Timber, 1), Stack(Oil, 1)),
       Vector(Stack(Lantern, 1)),
       6
     ),
     Recipe(
       "make-brace",
-      "Make a beam brace",
+      "Beam brace",
       Vector(Stack(Timber, 1), Stack(Rope, 1)),
       Vector(Stack(Brace, 1)),
       7,
