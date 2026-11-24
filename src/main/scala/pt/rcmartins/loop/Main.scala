@@ -1,84 +1,55 @@
 package pt.rcmartins.loop
 
-import com.raquo.airstream.core.AirstreamError.CombinedError
-import com.raquo.airstream.ownership.OneTimeOwner
 import com.raquo.laminar.api.L._
 import org.scalajs.dom
-import pt.rcmartins.loop.data.StoryActions
-import pt.rcmartins.loop.model.{GameState, ItemType}
+import pt.rcmartins.loop.market.{MarketDay, MarketView}
+import zio.json._
 
 import scala.scalajs.js.timers.setInterval
+import scala.util.Try
 
 object Main {
-
   def main(args: Array[String]): Unit = {
-    AirstreamError.registerUnhandledErrorCallback { e =>
-      println("=== UNHANDLED AIRSTREAM ERROR ===")
+    val key = MarketDay.saveKey(dom.window.location.pathname)
+    val stored = Try(Option(dom.window.localStorage.getItem(key)))
+    val loaded = stored.toOption.flatten.flatMap(_.fromJson[MarketDay].toOption)
+    val state = Var(loaded.getOrElse(MarketDay()))
+    val saveWarning = Var(stored.isFailure)
+    var saved = loaded
 
-      def dump(t: Throwable, indent: String = ""): Unit = t match {
-        case ce: CombinedError =>
-          println(indent + s"CombinedError with ${ce.causes.size} inner errors")
-          ce.causes.zipWithIndex.foreach { case (inner, i) =>
-            println(indent + s"  child #$i:")
-            inner.foreach(dump(_, indent + "    "))
-          }
-        case other =>
-          println(indent + s"${other.getClass.getName}: ${other.getMessage}")
-          other.getStackTrace.take(15).foreach { f =>
-            println(indent + s"  at $f")
-          }
+    def save(): Unit = {
+      val current = state.now()
+      if (!saved.contains(current)) {
+        val result = Try(dom.window.localStorage.setItem(key, current.toJson))
+        saveWarning.set(result.isFailure)
+        if (result.isSuccess) saved = Some(current)
       }
-
-      dump(e)
     }
 
-    // Hack to force object load before the json deserialization happens
-    val _ = ItemType.Coins.id
-    val _ = StoryActions.Data.InitialActions.map(_.actionDataType.id)
-
-    val saveLoad: SaveLoad = new SaveLoadImpl()
-
-    val currentGameState: GameState =
-      saveLoad.loadFromLocalStorage() match {
-        case None       => GameState.initial(System.currentTimeMillis())
-        case Some(save) => save
+    var last = dom.window.performance.now()
+    def updateClock(): Unit = {
+      val now = dom.window.performance.now()
+      val elapsed = (now - last).toInt
+      last += elapsed
+      if (!dom.document.hidden) {
+        val current = state.now()
+        val updated = current.advance(elapsed)
+        if (updated != current) state.set(updated)
       }
-
-    val gameData: GameData = {
-      val gameUtils = new GameUtils()
-      new GameData(
-        constructorGameState = currentGameState,
-        // TODO add some kind of offline progress ?
-        gameLogic = new GameLogic(gameUtils, saveLoad),
-        utils = gameUtils,
-      )
     }
 
-    MobileUtils.setupMobileLogic()
-
-    setInterval(25) {
-      gameData.runUpdateGameState()
-    }
-
-    val owner: Owner = new OneTimeOwner(() => println("Main owner disposed"))
-
-    gameData.utils.toastBus.events.foreach { toast =>
-      gameData.utils.toastsVar.update(_ :+ toast)
-    }(owner)
-
-    val ui = new UI(gameData, saveLoad).run()
-    val mobileUI = new MobileUI(gameData, saveLoad).run()
-
-    render(
-      dom.document.getElementById("main-div"),
-      div(
-        child <-- MobileUtils.isMobileSignal.map {
-          case false => ui
-          case true  => mobileUI
-        },
-        Util.toastContainer(gameData),
-      )
+    dom.document.addEventListener(
+      "visibilitychange",
+      (_: dom.Event) => {
+        last = dom.window.performance.now()
+        if (dom.document.hidden) save()
+      }
     )
+    dom.window.addEventListener("pagehide", (_: dom.Event) => save())
+    setInterval(100)(updateClock())
+    setInterval(1000)(save())
+
+    render(dom.document.getElementById("main-div"), new MarketView(state, saveWarning.signal).view)
   }
 
 }

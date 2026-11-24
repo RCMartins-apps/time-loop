@@ -2,7 +2,7 @@
 const CACHE_PREFIX = `time-loop:${self.registration.scope}:`;
 const CACHE_NAME = `${CACHE_PREFIX}__PWA_VERSION__`;
 const SHELL_PATHS = [
-  './', './index.html', './public/js/time-loop.js', './public/tailwind.3.4.17.js',
+  './', './index.html', './public/js/time-loop.js',
   './public/custom.css', './public/install.js', './public/manifest.webmanifest',
   './public/icons/icon-192.png', './public/icons/icon-512.png',
   './public/icons/icon-maskable-512.png', './public/icons/apple-touch-icon.png',
