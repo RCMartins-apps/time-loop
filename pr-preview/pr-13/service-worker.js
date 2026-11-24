@@ -1,8 +1,8 @@
 // The deployment workflow replaces this token with the source revision.
 const CACHE_PREFIX = `time-loop:${self.registration.scope}:`;
-const CACHE_NAME = `${CACHE_PREFIX}9f33c652ef8b04cf09230665e746633cde8d1093`;
+const CACHE_NAME = `${CACHE_PREFIX}cb4367641724178fbdc497971c46c7005b10213c`;
 const SHELL_PATHS = [
-  './', './index.html', './public/js/time-loop.js', './public/art/river-market.webp',
+  './', './index.html', './public/js/time-loop.js',
   './public/custom.css', './public/install.js', './public/manifest.webmanifest',
   './public/icons/icon-192.png', './public/icons/icon-512.png',
   './public/icons/icon-maskable-512.png', './public/icons/apple-touch-icon.png',
