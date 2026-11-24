@@ -1,0 +1,17 @@
+{
+  "id": "../",
+  "name": "Time Loop: The Last Market Day",
+  "short_name": "Time Loop",
+  "description": "An incremental time-loop adventure. Run a riverside workshop through the same market day and learn how to save the town.",
+  "lang": "en",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#162522",
+  "theme_color": "#162522",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
